@@ -153,7 +153,7 @@ class FontMetrics
 
         } elseif ($this->getOptions()->getPdfBackend() == "TCPDF") { // *** load TCPDF fonts
             $rootDir = $this->getOptions()->getRootDir();
-            $fontdir = $rootDir . '/lib/tcpdf/fonts/';
+            $fontdir = K_PATH_FONTS;
             $arfont = array('courier', 'helvetica', 'times',
                 'freesans', 'freeserif', 'freemono',
                 'dejavusans', 'dejavusanscondensed', 'dejavusansextralight', 'dejavusansmono',
