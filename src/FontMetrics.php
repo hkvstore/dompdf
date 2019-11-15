@@ -122,7 +122,7 @@ class FontMetrics
      */
     public function loadFontFamilies() //***
     {
-        if ($this->getOptions()->getPdfBackend() == "Cpdf") { // *** load CPDF fonts
+        if ($this->getOptions()->getPdfBackend() == "CPDF") { // *** load CPDF fonts
 
             $fontDir = $this->getOptions()->getFontDir();
             $rootDir = $this->getOptions()->getRootDir();
