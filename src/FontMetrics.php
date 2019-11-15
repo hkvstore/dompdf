@@ -122,7 +122,7 @@ class FontMetrics
      */
     public function loadFontFamilies() //***
     {
-        if ($this->getOptions()->getPdfBackend() == "CPDF") { // *** load CPDF fonts
+        if (strtoupper($this->getOptions()->getPdfBackend()) == "CPDF") { // *** load CPDF fonts
 
             $fontDir = $this->getOptions()->getFontDir();
             $rootDir = $this->getOptions()->getRootDir();
@@ -151,7 +151,7 @@ class FontMetrics
             // Merge provided fonts
             $this->fontLookup += $distFonts;
 
-        } elseif ($this->getOptions()->getPdfBackend() == "TCPDF") { // *** load TCPDF fonts
+        } elseif (strtoupper($this->getOptions()->getPdfBackend()) == "TCPDF") { // *** load TCPDF fonts
             $rootDir = $this->getOptions()->getRootDir();
             $fontdir = K_PATH_FONTS;
             $arfont = array('courier', 'helvetica', 'times',
