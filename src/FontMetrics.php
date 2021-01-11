@@ -127,7 +127,7 @@ class FontMetrics
             $fontDir = $this->getOptions()->getFontDir();
             $rootDir = $this->getOptions()->getRootDir();
 
-            // FIXME: tempoarary define constants for cache files <= v0.6.2
+            // FIXME: temporarily define constants for cache files <= v0.6.2
             if (!defined("DOMPDF_DIR")) { define("DOMPDF_DIR", $rootDir); }
             if (!defined("DOMPDF_FONT_DIR")) { define("DOMPDF_FONT_DIR", $fontDir); }
 
@@ -229,13 +229,18 @@ class FontMetrics
         $remoteHash = md5($remoteFile);
 
         $prefix = $fontname . "_" . $styleString;
-        $prefix = preg_replace("/[^\\pL\d]+/u", "-", $prefix);
         $prefix = trim($prefix, "-");
         if (function_exists('iconv')) {
-            $prefix = iconv('utf-8', 'us-ascii//TRANSLIT', $prefix);
+            $prefix = @iconv('utf-8', 'us-ascii//TRANSLIT', $prefix);
         }
-        $prefix = preg_replace("/[^-\w]+/", "", $prefix);
-
+        $prefix_encoding = mb_detect_encoding($prefix, mb_detect_order(), true);
+        $substchar = mb_substitute_character();
+        mb_substitute_character(0x005F);
+        $prefix = mb_convert_encoding($prefix, "ISO-8859-1", $prefix_encoding);
+        mb_substitute_character($substchar);
+        $prefix = preg_replace("[\W]", "_", $prefix);
+        $prefix = preg_replace("/[^-_\w]+/", "", $prefix);
+        
         $localFile = $fontDir . "/" . $prefix . "_" . $remoteHash;
 
         if (isset($entry[$styleString]) && $localFile == $entry[$styleString]) {
@@ -248,6 +253,38 @@ class FontMetrics
         $entry[$styleString] = $cacheEntry;
 
         // Download the remote file
+        [$protocol, $baseHost, $basePath] = Helpers::explode_url($remoteFile);
+        if (!$this->options->isRemoteEnabled() && ($protocol != "" && $protocol !== "file://")) {
+            Helpers::record_warnings(E_USER_WARNING, "Remote font resource $remoteFile referenced, but remote file download is disabled.", __FILE__, __LINE__);
+            return false;
+        }
+        if ($protocol == "" || $protocol === "file://") {
+            $realfile = realpath($remoteFile);
+
+            $rootDir = realpath($this->options->getRootDir());
+            if (strpos($realfile, $rootDir) !== 0) {
+                $chroot = $this->options->getChroot();
+                $chrootValid = false;
+                foreach($chroot as $chrootPath) {
+                    $chrootPath = realpath($chrootPath);
+                    if ($chrootPath !== false && strpos($realfile, $chrootPath) === 0) {
+                        $chrootValid = true;
+                        break;
+                    }
+                }
+                if ($chrootValid !== true) {    
+                    Helpers::record_warnings(E_USER_WARNING, "Permission denied on $remoteFile. The file could not be found under the paths specified by Options::chroot.", __FILE__, __LINE__);
+                    return false;
+                }
+            }
+
+            if (!$realfile) {
+                Helpers::record_warnings(E_USER_WARNING, "File '$realfile' not found.", __FILE__, __LINE__);
+                return false;
+            }
+
+            $remoteFile = $realfile;
+        }
         list($remoteFileContent, $http_response_header) = @Helpers::getFileContent($remoteFile, $context);
         if (empty($remoteFileContent)) {
             return false;
