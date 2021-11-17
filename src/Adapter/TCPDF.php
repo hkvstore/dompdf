@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @package dompdf
  * @link    http://www.dompdf.com/
@@ -30,14 +31,15 @@ use Dompdf\PhpEvaluator;
  *
  * @package dompdf
  */
-class TCPDF implements Canvas { //***
+class TCPDF implements Canvas //***
+{
 
     /**
      * Dimensions of paper sizes in points
      *
      * @var array;
      */
-    static public $PAPER_SIZES = []; // Set to Dompdf\Adapter\CPDF::$PAPER_SIZES below.
+    public static $PAPER_SIZES = []; // Set to Dompdf\Adapter\CPDF::$PAPER_SIZES below.
 
     /**
      * The Dompdf object
@@ -154,31 +156,32 @@ class TCPDF implements Canvas { //***
      */
     private $_internal_links;
 
-    private $_currentLineTransparency;	// not used because line transparency is set by fill transparency
+    private $_currentLineTransparency; // not used because line transparency is set by fill transparency
 
     private $_currentFillTransparency;
 
-  /**
-   * Class constructor
-   *
-   * @param mixed  $paper       The size of paper to use either a string (see {@link CPDF_Adapter::$PAPER_SIZES}) or
-   *                            an array(xmin,ymin,xmax,ymax)
-   * @param string $orientation The orientation of the document (either 'landscape' or 'portrait')
-   * @param DOMPDF $dompdf
-   */
-  function __construct($paper = "letter", $orientation = "portrait", Dompdf $dompdf = null) { //***
-
-        if ( is_array($paper) )
-          $size = $paper;
-        else if ( isset(self::$PAPER_SIZES[mb_strtolower($paper)]) )
-          $size = self::$PAPER_SIZES[mb_strtolower($paper)];
-        else
-          $size = self::$PAPER_SIZES["letter"];
+    /**
+     * Class constructor
+     *
+     * @param mixed  $paper       The size of paper to use either a string (see {@link CPDF_Adapter::$PAPER_SIZES}) or
+     *                            an array(xmin,ymin,xmax,ymax)
+     * @param string $orientation The orientation of the document (either 'landscape' or 'portrait')
+     * @param DOMPDF $dompdf
+     */
+    public function __construct($paper = "letter", $orientation = "portrait", Dompdf $dompdf = null) //***
+    {
+        if (is_array($paper)) {
+            $size = $paper;
+        } elseif (isset(self::$PAPER_SIZES[mb_strtolower($paper)])) {
+            $size = self::$PAPER_SIZES[mb_strtolower($paper)];
+        } else {
+            $size = self::$PAPER_SIZES["letter"];
+        }
 
         $ori = 'P'; // ***
-        if ( mb_strtolower($orientation) === "landscape" ) {
-          list($size[2], $size[3]) = [$size[3], $size[2]];
-          $ori = 'L'; // ***
+        if (mb_strtolower($orientation) === "landscape") {
+            list($size[2], $size[3]) = [$size[3], $size[2]];
+            $ori = 'L'; // ***
         }
 
         $this->_width = $size[2] - $size[0];
@@ -195,7 +198,7 @@ class TCPDF implements Canvas { //***
         // don't use TCPDF page defaults
         $this->_pdf->SetAutoPageBreak(false);
         $this->_pdf->SetMargins(0, 0, 0, true);
-        $this->_pdf->setPrintHeader(false);	// remove default header/footer
+        $this->_pdf->setPrintHeader(false); // remove default header/footer
         $this->_pdf->setPrintFooter(false);
         $this->_pdf->setHeaderMargin(0);
         $this->_pdf->setFooterMargin(0);
@@ -225,7 +228,8 @@ class TCPDF implements Canvas { //***
         //Helpers::dompdf_debug("trace", "Exit");
     }
 
-    function get_dompdf(){ //***
+    public function get_dompdf() //***
+    {
         return $this->_dompdf;
     }
 
@@ -234,12 +238,16 @@ class TCPDF implements Canvas { //***
      *
      * Deletes all temporary image files
      */
-    function __destruct() {
+    public function __destruct()
+    {
         foreach ($this->_image_cache as $img) {
-      //debugpng
-      if (DEBUGPNG) print '[__destruct unlink '.$img.']';
-      if (!DEBUGKEEPTEMP)
-            unlink($img);
+            //debugpng
+            if (DEBUGPNG) {
+                print '[__destruct unlink ' . $img . ']';
+            }
+            if (!DEBUGKEEPTEMP) {
+                unlink($img);
+            }
         }
     }
 
@@ -248,7 +256,8 @@ class TCPDF implements Canvas { //***
      *
      * @return Tcpdf
      */
-    function get_lib_obj() {
+    public function get_lib_obj()
+    {
         return $this->_pdf;
     }
 
@@ -261,10 +270,11 @@ class TCPDF implements Canvas { //***
      * @param string $label  label of the value (Creator, Producter, etc.)
      * @param string $value  the text to set
      */
-    function add_info($label, $value) {
+    public function add_info($label, $value)
+    {
         global $_dompdf_warnings;
 
-        switch($label) {
+        switch ($label) {
             case 'Creator':
                 $this->_pdf->SetCreator($value);
                 break;
@@ -300,7 +310,8 @@ class TCPDF implements Canvas { //***
      *
      * @return int
      */
-    function open_object() {
+    public function open_object()
+    {
         /* TCPDF does not appear to have template support. Options:
          * 1) add template support to TCPDF
          * 2) throw an error
@@ -324,7 +335,7 @@ class TCPDF implements Canvas { //***
 
         //throw new DOMPDF_Exception("TCPDF Adapter does not support opening objects.");
 
-        $this->_pdf->startTransaction();	// ???
+        $this->_pdf->startTransaction(); // ???
         $ret = $this->_pdf->openObject();
         $this->_objs[$ret] = ["start_page" => $this->_pdf->PageNo()];
         return $ret;
@@ -335,8 +346,9 @@ class TCPDF implements Canvas { //***
      *
      * @param int $object the ID of a previously opened object
      */
-    function reopen_object($object) {
-        $this->_pdf->startTransaction();	// ???
+    public function reopen_object($object)
+    {
+        $this->_pdf->startTransaction(); // ???
         $this->_pdf->reopenObject($object);
     }
 
@@ -345,9 +357,10 @@ class TCPDF implements Canvas { //***
      *
      * @see TCPDF_Adapter::open_object()
      */
-    function close_object() {
+    public function close_object()
+    {
         $this->_pdf->closeObject();
-        $this->_pdf->rollbackTransaction(true);	// ???
+        $this->_pdf->rollbackTransaction(true); // ???
     }
 
     /**
@@ -365,7 +378,8 @@ class TCPDF implements Canvas { //***
      * @param int $object the object handle returned by open_object()
      * @param string $where
      */
-    function add_object($object, $where = 'all') {
+    public function add_object($object, $where = 'all')
+    {
         if (mb_strpos($where, "next") !== false) {
             $this->_objs[$object]["start_page"]++;
             $where = str_replace("next", "", $where);
@@ -385,8 +399,9 @@ class TCPDF implements Canvas { //***
      *
      * @param int $object
      */
-    function stop_object($object) {
-        if (! isset ($this->_objs[$object])) {
+    public function stop_object($object)
+    {
+        if (!isset($this->_objs[$object])) {
             return;
         }
 
@@ -395,24 +410,27 @@ class TCPDF implements Canvas { //***
 
         // Place the object on this page if required
         $page_number = $this->_pdf->PageNo();
-        if ($page_number >= $start &&
-        (($page_number % 2 == 0 && $where == "even") ||
-        ($page_number % 2 == 1 && $where == "odd") ||
-        ($where == "all"))) {
+        if (
+            $page_number >= $start &&
+            (($page_number % 2 == 0 && $where == "even") ||
+            ($page_number % 2 == 1 && $where == "odd") ||
+            ($where == "all"))
+        ) {
             $data = $this->_pdf->getObject($object);
             $this->_pdf->setPageBuffer($page_number, $data['c'], true);
         }
 
-        unset ($this->_objs[$object]);
+        unset($this->_objs[$object]);
     }
 
     /**
      * Add all active objects to the current page
      */
-    protected function _place_objects() {
+    protected function _place_objects()
+    {
         //Helpers::dompdf_debug("trace", "()");
 
-        foreach ($this->_objs as $obj=>$props) {
+        foreach ($this->_objs as $obj => $props) {
             //var_dump($props);
 
             $start = $props["start_page"];
@@ -420,16 +438,17 @@ class TCPDF implements Canvas { //***
 
             // Place the object on this page if required
             $page_number = $this->_pdf->PageNo();
-            if ($page_number >= $start &&
-            (($page_number % 2 == 0 && $where == "even") ||
-            ($page_number % 2 == 1 && $where == "odd") ||
-            ($where == "all"))) {
+            if (
+                $page_number >= $start &&
+                (($page_number % 2 == 0 && $where == "even") ||
+                ($page_number % 2 == 1 && $where == "odd") ||
+                ($where == "all"))
+            ) {
                 $data = $this->_pdf->getObject($obj);
                 //Helpers::dompdf_debug("trace", "object data = " . $data['c']);
                 $this->_pdf->setPageBuffer($page_number, $data['c'], true);
             }
         }
-
     }
 
 
@@ -446,7 +465,7 @@ class TCPDF implements Canvas { //***
         //Helpers::dompdf_debug("trace", "([$color[0], $color[1], $color[2]])");
 
         //if ($this->_last_stroke_color == $color) {
-        //	return;
+        //    return;
         //}
 
         $this->_last_stroke_color = $color;
@@ -480,7 +499,7 @@ class TCPDF implements Canvas { //***
      * Sets line transparency
      * @see Tcpdf::setAlpha()
      *
-     * In TCFTP the setAlpha() method, sets both line transparency and fill transparency
+     * In TCPDF the setAlpha() method, sets both line transparency and fill transparency
      *
      * Valid blend modes are (case-sensitive):
      *
@@ -491,15 +510,16 @@ class TCPDF implements Canvas { //***
      * @param string $mode the blending mode to use
      * @param float $opacity 0.0 fully transparent, 1.0 fully opaque
      */
-    protected function _set_line_transparency($mode, $opacity) {
+    protected function _set_line_transparency($mode, $opacity)
+    {
         //Helpers::dompdf_debug("trace", "($mode, $opacity)");
 
         // Only create a new graphics state if required
         //if ( $mode != $this->_currentFillTransparency["mode"]  ||
         //$opacity != $this->_currentFillTransparency["opacity"] ) {
-            $this->_pdf->setAlpha($opacity, $mode);
-            $this->_currentFillTransparency["opacity"] = $opacity;
-            $this->_currentFillTransparency["mode"] = $mode;
+        $this->_pdf->setAlpha($opacity, $mode);
+        $this->_currentFillTransparency["opacity"] = $opacity;
+        $this->_currentFillTransparency["mode"] = $mode;
         //}
     }
 
@@ -507,7 +527,7 @@ class TCPDF implements Canvas { //***
      * Sets fill transparency
      * @see Tcpdf::setAlpha()
      *
-     * In TCFTP the setAlpha() method, sets both line transparency and fill transparency
+     * In TCPDF the setAlpha() method, sets both line transparency and fill transparency
      *
      * Valid blend modes are (case-sensitive):
      *
@@ -518,15 +538,16 @@ class TCPDF implements Canvas { //***
      * @param string $mode the blending mode to use
      * @param float $opacity 0.0 fully transparent, 1.0 fully opaque
      */
-    protected function _set_fill_transparency($mode, $opacity) {
+    protected function _set_fill_transparency($mode, $opacity)
+    {
         //Helpers::dompdf_debug("trace", "($mode, $opacity)");
 
         // Only create a new graphics state if required
         //if ( $mode != $this->_currentFillTransparency["mode"]  ||
         //$opacity != $this->_currentFillTransparency["opacity"] ) {
-            $this->_pdf->setAlpha($opacity, $mode);
-            $this->_currentFillTransparency["opacity"] = $opacity;
-            $this->_currentFillTransparency["mode"] = $mode;
+        $this->_pdf->setAlpha($opacity, $mode);
+        $this->_currentFillTransparency["opacity"] = $opacity;
+        $this->_currentFillTransparency["mode"] = $mode;
         //}
     }
 
@@ -561,8 +582,9 @@ class TCPDF implements Canvas { //***
      * @param unknown_type $color
      * @return unknown_type
      */
-    protected function _get_rgb($color) {
-        return [round(255*$color[0]), round(255*$color[1]), round(255*$color[2])];
+    protected function _get_rgb($color)
+    {
+        return [round(255 * $color[0]), round(255 * $color[1]), round(255 * $color[2])];
     }
 
     /**
@@ -574,7 +596,8 @@ class TCPDF implements Canvas { //***
      * @param unknown_type $dash
      * @return unknown_type
      */
-    protected function _make_line_style($color = '', $width='', $cap='', $join='', $dash='') {
+    protected function _make_line_style($color = '', $width = '', $cap = '', $join = '', $dash = '')
+    {
         //Helpers::dompdf_debug("trace", "($color, $width, $cap, $join, $dash)");
         $style = [];
         if ($color) {
@@ -594,12 +617,13 @@ class TCPDF implements Canvas { //***
     }
 
     /**
-     * Convert a GIF image to a PNG image
+     * Convert image to a PNG image
      *
      * @return string The url of the newly converted image
      */
-    protected function _convert_gif_to_png($image_url) {
-        if ( !function_exists("imagecreatefromgif") ) {
+    protected function _convert_to_png($image_url)
+    {
+        if (!function_exists("imagecreatefromgif")) {
             throw new DOMPDF_Exception("Function imagecreatefromgif() not found.  Cannot convert gif image: $image_url.  Please install the image PHP extension.");
         }
 
@@ -612,10 +636,9 @@ class TCPDF implements Canvas { //***
                 imageinterlace($img, 0);
                 $tmp_filename = tempnam(DOMPDF_TEMP_DIR, "dompdf_img_");
                 imagepng($img, $tmp_filename);
-                rename($tmp_filename, $tmp_filename.'.png');
-                $img_url = $tmp_filename.'.png';
-            }
-            else {
+                rename($tmp_filename, $tmp_filename . '.png');
+                $img_url = $tmp_filename . '.png';
+            } else {
                 $img_url = "../../lib/res/broken_image.png";
             }
         }
@@ -630,7 +653,8 @@ class TCPDF implements Canvas { //***
     /**
      * Add text to each page after rendering is complete
      */
-    protected function _add_page_text() {
+    protected function _add_page_text()
+    {
         //Helpers::dompdf_debug("trace", "()");
 
         if (!count($this->_page_text)) {
@@ -647,11 +671,9 @@ class TCPDF implements Canvas { //***
             foreach ($this->_page_text as $pt) {
                 extract($pt);
 
-                switch($_t) {
-
+                switch ($_t) {
                     case "text":
-                        $text = str_replace(["{PAGE_NUM}", "{PAGE_COUNT}"],
-                            [$page_number, $this->_pdf->getNumPages()], $text);
+                        $text = str_replace(["{PAGE_NUM}", "{PAGE_COUNT}"], [$page_number, $this->_pdf->getNumPages()], $text);
                         $this->text($x, $y, $text, $font, $size, $color, $adjust, 0, $angle); //***
                         break;
 
@@ -659,7 +681,7 @@ class TCPDF implements Canvas { //***
                         if (!$eval) {
                             $eval = new PHP_Evaluator($this);
                         }
-                        $eval->evaluate($code, ['PAGE_NUM'=>$page_number, 'PAGE_COUNT'=>$this->_pdf->getNumPages()]);
+                        $eval->evaluate($code, ['PAGE_NUM' => $page_number, 'PAGE_COUNT' => $this->_pdf->getNumPages()]);
                         break;
                 }
             }
@@ -673,7 +695,8 @@ class TCPDF implements Canvas { //***
      *
      * @return unknown_type
      */
-    protected function _add_internal_links() {
+    protected function _add_internal_links()
+    {
         //Helpers::dompdf_debug("trace", "()");
 
         if (!count($this->_internal_links)) {
@@ -692,17 +715,20 @@ class TCPDF implements Canvas { //***
      * @param unknown_type $font
      * @return unknown_type
      */
-    protected function _get_font($font) {
+    protected function _get_font($font)
+    {
         $name = basename($font);
         $a = explode('-', $name);
         $f = strtolower($a[0]);
         $s = '';
-//***		if (strpos($a[1], 'Bold') !== false) {
-//			$s .= 'B';
-//		}
-//		if (strpos($a[1], 'Italic') !== false) {
-//			$s .= 'I';
-//		}
+
+        //*** if (strpos($a[1], 'Bold') !== false) {
+        //     $s .= 'B';
+        // }
+        // if (strpos($a[1], 'Italic') !== false) {
+        //     $s .= 'I';
+        // }
+
         //Helpers::dompdf_debug("trace2", "($font): returns $f, $s");
         return ['family' => $f, 'style' => $s];
     }
@@ -713,7 +739,8 @@ class TCPDF implements Canvas { //***
     /**
      * @return Number
      */
-    function get_width() {
+    public function get_width()
+    {
         //Helpers::dompdf_debug("trace", ": returns $this->_width");
         return $this->_width;
     }
@@ -722,7 +749,8 @@ class TCPDF implements Canvas { //***
      *
      * @return Number
      */
-    function get_height() {
+    public function get_height()
+    {
         //Helpers::dompdf_debug("trace", ": returns $this->_height");
         return $this->_height;
     }
@@ -732,7 +760,8 @@ class TCPDF implements Canvas { //***
      *
      * @return int
      */
-    function get_page_number() {
+    public function get_page_number()
+    {
         return $this->_pdf->PageNo();
     }
 
@@ -741,7 +770,8 @@ class TCPDF implements Canvas { //***
      *
      * @param int $num
      */
-    function set_page_number($num) {
+    public function set_page_number($num)
+    {
         $this->_pdf->setPage($num);
     }
 
@@ -750,7 +780,8 @@ class TCPDF implements Canvas { //***
      *
      * @return int
      */
-    function get_page_count() {
+    public function get_page_count()
+    {
         return $this->_pdf->getNumPages();
     }
 
@@ -761,7 +792,8 @@ class TCPDF implements Canvas { //***
      *
      * @param int $count
      */
-    function set_page_count($count) {
+    public function set_page_count($count)
+    {
         //$this->_page_count = (int)$count;
         //throw new DOMPDF_Exception("TCPDF does not support setting the page count.");
         $_dompdf_warnings[] = "TCPDF does not support setting the page count.";
@@ -782,7 +814,8 @@ class TCPDF implements Canvas { //***
      * @param float $width
      * @param array $style
      */
-    function line($x1, $y1, $x2, $y2, $color, $width, $style = [], $blend = "Normal", $opacity = 1.0) {
+    public function line($x1, $y1, $x2, $y2, $color, $width, $style = [], $blend = "Normal", $opacity = 1.0)
+    {
         //Helpers::dompdf_debug("trace", "($x1, $y1, $x2, $y2, [$color[0], $color[1], $color[2]], $width, $style, $blend, $opacity)");
 
         //$this->_set_stroke_color($color);
@@ -792,7 +825,11 @@ class TCPDF implements Canvas { //***
         $this->_pdf->Line($x1, $y1, $x2, $y2, $this->_make_line_style($color, $width, "butt", "", $style));
     }
 
-    function arc($x, $y, $r1, $r2, $astart, $aend, $color, $width, $style = []) { //***
+    /**
+     * Draws an arc
+     */
+    public function arc($x, $y, $r1, $r2, $astart, $aend, $color, $width, $style = []) //***
+    {
         $this->_set_stroke_color($color);
         $this->_set_line_style($width, "butt", "", $style);
 
@@ -814,7 +851,8 @@ class TCPDF implements Canvas { //***
      * @param float $width
      * @param array $style
      */
-    function rectangle($x1, $y1, $w, $h, $color, $width, $style = null, $blend = "Normal", $opacity = 1.0) {
+    public function rectangle($x1, $y1, $w, $h, $color, $width, $style = null, $blend = "Normal", $opacity = 1.0)
+    {
         //Helpers::dompdf_debug("trace", "($x1, $y1, $w, $h, [$color[0], $color[1], $color[2]], $width, $style, $blend, $opacity)");
 
         //$this->_set_stroke_color($color);
@@ -835,7 +873,8 @@ class TCPDF implements Canvas { //***
      * @param float $h
      * @param array $color
      */
-    function filled_rectangle($x1, $y1, $w, $h, $color, $blend = "Normal", $opacity = 1.0) {
+    public function filled_rectangle($x1, $y1, $w, $h, $color, $blend = "Normal", $opacity = 1.0)
+    {
         //var_dump($color);
         //Helpers::dompdf_debug("trace", "($x1, $y1, $w, $h, [$color[0], $color[1], $color[2]], $blend, $opacity)");
 
@@ -844,9 +883,14 @@ class TCPDF implements Canvas { //***
         //$this->_set_line_style(1, "square", "miter", array());
         $this->_set_line_transparency($blend, $opacity);
         $this->_set_fill_transparency($blend, $opacity);
-
-        $this->_pdf->Rect($x1, $y1, $w, $h, 'F', $this->_make_line_style($color, 1, "square", "miter", []), $this->_get_rgb($color)); //***
-
+        try { //***
+            if (isset($color["alpha"])) {
+                $this->_pdf->setAlpha($color["alpha"]);
+            }
+            $this->_pdf->Rect($x1, $y1, $w, $h, 'F', $this->_make_line_style($color, 1, "square", "miter", []), $this->_get_rgb($color));
+        } finally {
+            $this->_pdf->setAlpha($alpha);
+        }
     }
 
     /**
@@ -857,51 +901,82 @@ class TCPDF implements Canvas { //***
      * @param float $w
      * @param float $h
      */
-  function clipping_rectangle($x1, $y1, $w, $h) {}
+    public function clipping_rectangle($x1, $y1, $w, $h)
+    {
+        // Not implemented
+    }
 
-  function clipping_roundrectangle($x1, $y1, $w, $h, $rTL, $rTR, $rBR, $rBL) { //***
-    $this->_pdf->clippingRectangleRounded($x1, $this->y($y1) - $h, $w, $h, $rTL, $rTR, $rBR, $rBL);
-  }
+    /**
+     * Starts a clipping round rectangle
+     */
+    public function clipping_roundrectangle($x1, $y1, $w, $h, $rTL, $rTR, $rBR, $rBL) //***
+    {
+        $this->_pdf->clippingRectangleRounded($x1, $this->y($y1) - $h, $w, $h, $rTL, $rTR, $rBR, $rBL);
+    }
 
     /**
      * Ends the last clipping shape
      */
-    function clipping_end() {}
+    public function clipping_end()
+    {
+        // Not implemented
+    }
 
     /**
      * Save current state
      */
-    function save() {}
+    public function save()
+    {
+        // Not implemented
+    }
 
     /**
      * Restore last state
      */
-    function restore() {}
+    public function restore()
+    {
+        // Not implemented
+    }
 
     /**
      * Rotate
      */
-    function rotate($angle, $x, $y) {}
+    public function rotate($angle, $x, $y)
+    {
+        // Not implemented
+    }
 
     /**
      * Skew
      */
-    function skew($angle_x, $angle_y, $x, $y) {}
+    public function skew($angle_x, $angle_y, $x, $y)
+    {
+        // Not implemented
+    }
 
     /**
      * Scale
      */
-    function scale($s_x, $s_y, $x, $y) {}
+    public function scale($s_x, $s_y, $x, $y)
+    {
+        // Not implemented
+    }
 
     /**
      * Translate
      */
-    function translate($t_x, $t_y) {}
+    public function translate($t_x, $t_y)
+    {
+        // Not implemented
+    }
 
     /**
      * Transform
      */
-    function transform($a, $b, $c, $d, $e, $f) {}
+    public function transform($a, $b, $c, $d, $e, $f)
+    {
+        // Not implemented
+    }
 
     /**
      * Draws a polygon
@@ -927,7 +1002,8 @@ class TCPDF implements Canvas { //***
      * @param array $style
      * @param bool  $fill  Fills the polygon if true
      */
-    function polygon($points, $color, $width = null, $style = null, $fill = false, $blend = "Normal", $opacity = 1.0) {
+    public function polygon($points, $color, $width = null, $style = null, $fill = false, $blend = "Normal", $opacity = 1.0)
+    {
         //Helpers::dompdf_debug("trace", "($points, [$color[0], $color[1], $color[2]], $width, $style, $fill, $blend, $opacity)");
 
         //$this->_set_fill_color($color);
@@ -939,7 +1015,7 @@ class TCPDF implements Canvas { //***
         }
 
         //if (!$fill && isset ($width)) {
-        //	$this->_set_line_style($width, "square", "miter", $style);
+        //    $this->_set_line_style($width, "square", "miter", $style);
         //}
 
         $this->_pdf->Polygon($points, $fill ? 'F' : '', $this->_make_line_style($color, $width, "square", "miter", $style), $this->_get_rgb($color));
@@ -960,7 +1036,8 @@ class TCPDF implements Canvas { //***
      * @param array $style
      * @param bool $fill Fills the circle if true
      */
-    function circle($x, $y, $r, $color, $width = null, $style = null, $fill = false, $blend = "Normal", $opacity = 1.0) {
+    public function circle($x, $y, $r, $color, $width = null, $style = null, $fill = false, $blend = "Normal", $opacity = 1.0)
+    {
         //Helpers::dompdf_debug("trace", "($x, $y, $r, [$color[0], $color[1], $color[2]], $width, $style, $fill, $blend, $opacity)");
 
         //$this->_set_fill_color($color);
@@ -972,7 +1049,7 @@ class TCPDF implements Canvas { //***
         }
 
         //if (!$fill && isset ($width)) {
-        //	$this->_set_line_style($width, "round", "round", $style);
+        //    $this->_set_line_style($width, "round", "round", $style);
         //}
 
         $this->_pdf->Circle($x, $y, $r, 0, 360, $fill ? 'F' : '', $this->_make_line_style($color, $width, "round", "round", $style), $this->_get_rgb($color));
@@ -991,12 +1068,13 @@ class TCPDF implements Canvas { //***
      * @param int $w width (in pixels)
      * @param int $h height (in pixels)
      */
-    function image($img, $x, $y, $w, $h, $resolution = "normal") {
+    public function image($img, $x, $y, $w, $h, $resolution = "normal")
+    {
+        //*** if ($img_type == 'gif') {
+        //     $img_url = $this->_convert_gif_to_png($img_url);
+        //     $img_type = 'png';
+        // }
 
-//***		if ($img_type == 'gif') {
-//			$img_url = $this->_convert_gif_to_png($img_url);
-//			$img_type = 'png';
-//		}
         $path_parts = pathinfo($img);
         $img_url = $img;
         $img_type = strtolower($path_parts['extension']);
@@ -1020,11 +1098,12 @@ class TCPDF implements Canvas { //***
      * @param array $color
      * @param float $adjust word spacing adjustment
      */
-    //***function text($x, $y, $text, $font, $size, $color = array (0, 0, 0), $adjust = 0, $angle = 0, $blend = "Normal", $opacity = 1.0) {
-    function text($x, $y, $text, $font, $size, $color = [0, 0, 0], $adjust = 0.0, $char_space = 0.0, $angle = 0.0) { //***
+    //***function text($x, $y, $text, $font, $size, $color = array (0, 0, 0), $adjust = 0, $angle = 0, $blend = "Normal", $opacity = 1.0)
+    public function text($x, $y, $text, $font, $size, $color = [0, 0, 0], $adjust = 0.0, $char_space = 0.0, $angle = 0.0) //***
+    {
         //Helpers::dompdf_debug("trace", "($x, $y, $text, ". basename($font) .", $size, [$color[0], $color[1], $color[2]], $adjust, $angle, $blend, $opacity)");
 
-        list ($r, $g, $b) = $this->_get_rgb($color);
+        list($r, $g, $b) = $this->_get_rgb($color);
         $this->_pdf->SetTextColor($r, $g, $b);
         //***$this->_set_line_transparency($blend, $opacity);
         //***$this->_set_fill_transparency($blend, $opacity);
@@ -1040,16 +1119,15 @@ class TCPDF implements Canvas { //***
             $this->_pdf->SetXY($x, $y);
 
             //$y += self::FONT_HEIGHT_SCALE * $size + 1;
-            for ($i = 0; $i < count($a)-1; $i++) {
-                $this->_pdf->Write($size, $a[$i].' ', '');
+            for ($i = 0; $i < count($a) - 1; $i++) {
+                $this->_pdf->Write($size, $a[$i] . ' ', '');
                 //$this->_pdf->Text($x, $y, $a[$i].' ');
-                $this->_pdf->SetX($this->_pdf->GetX()+$adjust);
+                $this->_pdf->SetX($this->_pdf->GetX() + $adjust);
                 //$x += $this->_pdf->GetX() + $adjust;
             }
             $this->_pdf->Write($size, $a[$i], '');
             //$this->_pdf->Text($x, $y, $a[$i].' ');
-        }
-        else {
+        } else {
             if ($angle != 0) {
                 $this->_pdf->StartTransform();
                 //$y += self::FONT_HEIGHT_SCALE * $size;
@@ -1057,11 +1135,10 @@ class TCPDF implements Canvas { //***
                 $this->_pdf->Rotate(-$angle, $x, $y);
                 $this->_pdf->Text($x, $y, $text, false, false, true, 0, 0, '', 0, '', 0, false, 'T', 'T');
                 $this->_pdf->StopTransform();
-            }
-            else {
+            } else {
                 //$pippo = $this->_pdf->getFontAscent($fontdata['family'], $fontdata['style'], $size);
                 //$y += $pippo / 8;
-                //$y = $y - 0.85 * $size;	// + 0.8 * $size;
+                //$y = $y - 0.85 * $size; // + 0.8 * $size;
                 $this->_pdf->Text($x, $y, $text, false, false, true, 0, 0, '', 0, '', 0, false, 'T', 'T');
             }
         }
@@ -1072,7 +1149,8 @@ class TCPDF implements Canvas { //***
      *
      * @param string $anchorname The name of the named destination
      */
-    function add_named_dest($anchorname) {
+    public function add_named_dest($anchorname)
+    {
         //Helpers::dompdf_debug("trace", "($anchorname)");
         $link = $this->_pdf->AddLink();
         $this->_pdf->SetLink($link, -1, -1);
@@ -1088,7 +1166,8 @@ class TCPDF implements Canvas { //***
      * @param float  $width   The width of the link
      * @param float  $height   The height of the link
      */
-    function add_link($url, $x, $y, $width, $height) {
+    public function add_link($url, $x, $y, $width, $height)
+    {
         //Helpers::dompdf_debug("trace", "($url, $x, $y, $width, $height)");
 
         if (strpos($url, '#') === 0) {
@@ -1097,10 +1176,9 @@ class TCPDF implements Canvas { //***
             if ($name) {
                 $page = $this->_pdf->PageNo();
                 //$this->_pdf->Link($x, $y, $width, $height, $this->_nameddest[$name]);
-                $this->_internal_links[] = compact('page', 'name', 'x', 'y', 'width', 'height');	//array($this->_pdf->PageNo(), $name, $x, $y, $width, $height);
+                $this->_internal_links[] = compact('page', 'name', 'x', 'y', 'width', 'height'); //array($this->_pdf->PageNo(), $name, $x, $y, $width, $height);
             }
-        }
-        else {
+        } else {
             $this->_pdf->Link($x, $y, $width, $height, rawurldecode($url));
         }
     }
@@ -1114,12 +1192,13 @@ class TCPDF implements Canvas { //***
      * @param float  $spacing word spacing, if any
      * @return float
      */
-    function get_text_width($text, $font, $size, $word_spacing = 0, $char_spacing = 0) {
+    public function get_text_width($text, $font, $size, $word_spacing = 0, $char_spacing = 0)
+    {
         // Determine the additional width due to extra spacing
         $num_spaces = mb_substr_count($text, " ");
-        $delta = $word_spacing*$num_spaces;
+        $delta = $word_spacing * $num_spaces;
         $fontdata = $this->_get_font($font);
-        $result = $this->_pdf->GetStringWidth($text, $fontdata['family'], $fontdata['style'], $size)+$delta; //$font);
+        $result = $this->_pdf->GetStringWidth($text, $fontdata['family'], $fontdata['style'], $size) + $delta; //$font);
         //Helpers::dompdf_debug("trace", "($text, ". basename($font) .", $size, $word_spacing, $char_spacing): returns $result");
         return $result;
     }
@@ -1133,12 +1212,12 @@ class TCPDF implements Canvas { //***
      * @param float $size
      * @return float
      */
-    function get_font_height($font, $size) {
+    public function get_font_height($font, $size)
+    {
         if (!$font) {
             $fontFamily = $this->_pdf->getFontFamily();
             $fontStyle = $this->_pdf->getFontStyle();
-        }
-        else {
+        } else {
             $fontdata = $this->_get_font($font);
             $fontFamily = $fontdata['family'];
             $fontStyle = $fontdata['style'];
@@ -1146,8 +1225,7 @@ class TCPDF implements Canvas { //***
         }
         if (strpos($fontStyle, 'B') !== false) {
             $scale = self::FONT_HEIGHT_SCALE_BOLD;
-        }
-        else {
+        } else {
             $scale = self::FONT_HEIGHT_SCALE_NORMAL;
         }
         $result = $scale * $size;
@@ -1155,7 +1233,11 @@ class TCPDF implements Canvas { //***
         return $result;
     }
 
-    function get_font_baseline($font, $size) { // b3
+    /**
+     * Get font baseline
+     */
+    function get_font_baseline($font, $size) // b3
+    {
         //***return $this->get_font_height($font, $size) / DOMPDF_FONT_HEIGHT_RATIO;
         $ratio = $this->_dompdf->get_option("font_height_ratio"); //***
         return $this->get_font_height($font, $size) / $ratio; //***
@@ -1167,13 +1249,18 @@ class TCPDF implements Canvas { //***
      * @param $opacity
      * @param $mode
      */
-    function set_opacity($opacity, $mode = "Normal") {
+    function set_opacity($opacity, $mode = "Normal")
+    {
         //Helpers::dompdf_debug("trace", "($opacity, $mode)");
         $this->_set_line_transparency($mode, $opacity);
         $this->_set_fill_transparency($mode, $opacity);
     }
 
-    function set_default_view($view, $options = []) { // b3
+    /**
+     * Set default view
+     */
+    function set_default_view($view, $options = []) // b3
+    {
         array_unshift($options, $view);
         $currentPage = $this->_pdf->currentPage;
         call_user_func_array([$this->_pdf, "openHere"], $options);
@@ -1184,7 +1271,8 @@ class TCPDF implements Canvas { //***
      *
      * Subsequent drawing operations will appear on the new page.
      */
-    function new_page() {
+    function new_page()
+    {
         //Helpers::dompdf_debug("trace", "()");
 
         // Add objects to the current page
@@ -1205,7 +1293,8 @@ class TCPDF implements Canvas { //***
      * @param string $filename the name of the PDF file
      * @param array  $options associative array, 'Attachment' => 0 or 1, 'compress' => 1 or 0
      */
-    function stream($filename, $options = null) {
+    public function stream($filename, $options = null)
+    {
         //Helpers::dompdf_debug("trace", "($filename, $options)");
 
         // Add page text
@@ -1213,15 +1302,17 @@ class TCPDF implements Canvas { //***
         $this->_add_internal_links();
 
         // TCPDF expects file name with extension (cf. Cpdf expects file name without extension) //***
-        if (!preg_match('/\.pdf$/', $filename))
+        if (!preg_match('/\.pdf$/', $filename)) {
             $filename .= ".pdf";
+        }
 
         $options["Content-Disposition"] = $filename;
 
-        if ( isset($options["compress"]) && $options["compress"] == 0 )
-        $compress = false;
-        else
-        $compress = true;
+        if (isset($options["compress"]) && $options["compress"] == 0) {
+            $compress = false;
+        } else {
+            $compress = true;
+        }
 
         $this->_pdf->SetCompression($compress);
 
@@ -1234,7 +1325,8 @@ class TCPDF implements Canvas { //***
      * @param array  $options associative array: 'compress' => 1 or 0
      * @return string
      */
-    function output($options = null) {
+    public function output($options = null)
+    {
         //Helpers::dompdf_debug("trace", "($options[compress])");
 
         // Add page text
@@ -1243,10 +1335,9 @@ class TCPDF implements Canvas { //***
 
         $this->_place_objects();
 
-        if ( isset($options["compress"]) && $options["compress"] == 0 ) {
+        if (isset($options["compress"]) && $options["compress"] == 0) {
             $compress = false;
-        }
-        else {
+        } else {
             $compress = true;
         }
 
@@ -1260,13 +1351,15 @@ class TCPDF implements Canvas { //***
      * @param $code
      * @return unknown_type
      */
-    function javascript($code) {
+    public function javascript($code)
+    {
         // STUB
     }
 
     /**
      * Other public methods callable from user pages
      */
+
     /**
      * Writes text at the specified x and y coordinates on every page
      *
@@ -1285,7 +1378,8 @@ class TCPDF implements Canvas { //***
      * @param float $char_space char spacing adjustment
      * @param float $angle angle to write the text at, measured CW starting from the x-axis
      */
-    function page_text($x, $y, $text, $font, $size, $color = [0, 0, 0], $word_space = 0.0, $char_space = 0.0, $angle = 0) {
+    public function page_text($x, $y, $text, $font, $size, $color = [0, 0, 0], $word_space = 0.0, $char_space = 0.0, $angle = 0)
+    {
         //Helpers::dompdf_debug("trace", "($x, $y, $text, ". basename($font) .", $size, $color, $adjust, $angle, $blend, $opacity)");
 
         $_t = "text";
@@ -1303,7 +1397,8 @@ class TCPDF implements Canvas { //***
      * @param string $code the script code
      * @param string $type the language type for script
      */
-    function page_script($code, $type = "text/php") {
+    public function page_script($code, $type = "text/php")
+    {
         $_t = "script";
         $this->_page_text[] = compact("_t", "code", "type");
     }
@@ -1317,34 +1412,42 @@ class TCPDF implements Canvas { //***
  *
  * It assumes that $this->page does not change while an object is opened
  */
-class My_TCPDF extends \TCPDF { //***
+class My_TCPDF extends \TCPDF //***
+{
     private $dompdf_num_objects = 0;
     private $dompdf_objects = [];
 
     private $dompdf_num_stack = 0;
     private $dompdf_stack = [];
 
-    function getPageBuffer($page) {
+    /**
+     * Get page buffer
+     */
+    public function getPageBuffer($page) {
         return parent::getPageBuffer($page);
     }
 
-    function setPageBuffer($page, $data, $append=false) {
+    /**
+     * Set page buffer
+     */
+    public function setPageBuffer($page, $data, $append = false)
+    {
         parent::setPageBuffer($page, $data, $append);
     }
 
     /**
-     * save the TCPDF output buffer content in a stack and initialize it to an empty string
+     * Save the TCPDF output buffer content in a stack and initialize it to an empty string
      * the function will return an object ID
      *
      * NOTE: can this method be called again without first issuing a closeObject()?
      */
-    function openObject() {
+    public function openObject()
+    {
         //Helpers::dompdf_debug("trace", "Enter My_TCPDF.openObject(state = $this->state)");
 
         if ($this->state == 2) {
             $curr_buffer = $this->getPageBuffer($this->page);
-        }
-        else {
+        } else {
             $curr_buffer = $this->getBuffer();
         }
 
@@ -1355,12 +1458,11 @@ class My_TCPDF extends \TCPDF { //***
 
         if ($this->state == 2) {
             $this->setPageBuffer($this->page, '');
-        }
-        else {
+        } else {
             $this->buffer = '';
             $this->bufferlen = strlen($this->buffer);
         }
-        $this->page = 1;	// some output is not done if page = 0 (e.g SetDrawColor())
+        $this->page = 1; // some output is not done if page = 0 (e.g SetDrawColor())
 
         $this->dompdf_num_objects++;
         $this->dompdf_objects[$this->dompdf_num_objects] = ['c' => '', 'p' => 0, 'g' => null];
@@ -1371,14 +1473,13 @@ class My_TCPDF extends \TCPDF { //***
     /**
      * restore the saved TCPDF output buffer content
      */
-    function closeObject() {
+    public function closeObject()
+    {
         //Helpers::dompdf_debug("trace", "Enter My_TCPDF.closeObject(state = $this->state)");
         if ($this->dompdf_num_stack > 0) {
-
             if ($this->state == 2) {
                 $curr_buffer = $this->getPageBuffer($this->page);
-            }
-            else {
+            } else {
                 $curr_buffer = $this->getBuffer();
             }
 
@@ -1394,8 +1495,7 @@ class My_TCPDF extends \TCPDF { //***
 
             if ($this->state == 2) {
                 $this->setPageBuffer($this->page, $saved_stack['c']);
-            }
-            else {
+            } else {
                 $this->buffer = $saved_stack['c'];
                 $this->bufferlen = strlen($this->buffer);
             }
@@ -1412,13 +1512,13 @@ class My_TCPDF extends \TCPDF { //***
      * reopen an existing object for editing
      * save the TCPDF output buffer content in the stack and initialize it with the contents of the object being reopened
      */
-    function reopenObject($id) {
+    public function reopenObject($id)
+    {
         //Helpers::dompdf_debug("trace", "Enter My_TCPDF.reopenObject($id)");
 
         if ($this->state == 2) {
             $curr_buffer = $this->getPageBuffer($this->page);
-        }
-        else {
+        } else {
             $curr_buffer = $this->getBuffer();
         }
 
@@ -1427,8 +1527,7 @@ class My_TCPDF extends \TCPDF { //***
 
         if ($this->state == 2) {
             $this->setPageBuffer($this->page, $this->dompdf_objects[$id]['c']);
-        }
-        else {
+        } else {
             $this->buffer = $this->dompdf_objects[$id]['c'];
             $this->bufferlen = strlen($this->buffer);
         }
@@ -1439,13 +1538,23 @@ class My_TCPDF extends \TCPDF { //***
         $this->setGraphicVars($this->dompdf_objects[$id]['g']);
     }
 
-    function getObject($id) {
+    /**
+     * Get object
+     */
+    public function getObject($id)
+    {
         //Helpers::dompdf_debug("trace", "Enter My_TCPDF.getObject($id)");
         return $this->dompdf_objects[$id];
     }
 }
 
-function endsWith($haystack,$needle,$case=true) {
-    if($case){return (strcmp(substr($haystack, strlen($haystack) - strlen($needle)),$needle)===0);}
-    return (strcasecmp(substr($haystack, strlen($haystack) - strlen($needle)),$needle)===0);
+/**
+ * Ends with
+ */
+function endsWith($haystack, $needle, $case = true)
+{
+    if ($case) {
+        return (strcmp(substr($haystack, strlen($haystack) - strlen($needle)), $needle) === 0);
+    }
+    return (strcasecmp(substr($haystack, strlen($haystack) - strlen($needle)), $needle) === 0);
 }
