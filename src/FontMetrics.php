@@ -124,75 +124,33 @@ class FontMetrics
      */
     public function loadFontFamilies()
     {
-        if (strtoupper($this->options->getPdfBackend()) == "CPDF") { // *** load CPDF fonts
-            $fontDir = $this->options->getFontDir();
-            $rootDir = $this->options->getRootDir();
+        $fontDir = $this->options->getFontDir();
+        $rootDir = $this->options->getRootDir();
 
-            // FIXME: temporarily define constants for cache files <= v0.6.2
-            if (!defined("DOMPDF_DIR")) { define("DOMPDF_DIR", $rootDir); }
-            if (!defined("DOMPDF_FONT_DIR")) { define("DOMPDF_FONT_DIR", $fontDir); }
+        // FIXME: temporarily define constants for cache files <= v0.6.2
+        if (!defined("DOMPDF_DIR")) { define("DOMPDF_DIR", $rootDir); }
+        if (!defined("DOMPDF_FONT_DIR")) { define("DOMPDF_FONT_DIR", $fontDir); }
 
-            $file = $rootDir . "/lib/fonts/dompdf_font_family_cache.dist.php";
-            $distFontsClosure = require $file;
-            $distFonts = is_array($distFontsClosure) ? $distFontsClosure : $distFontsClosure($rootDir);
-            if (!is_readable($this->getCacheFile())) {
-                $this->fontLookup = $distFonts;
-                return;
-            }
+        $file = $rootDir . "/lib/fonts/dompdf_font_family_cache.dist.php";
+        $distFontsClosure = require $file;
+        $distFonts = is_array($distFontsClosure) ? $distFontsClosure : $distFontsClosure($rootDir);
+        if (!is_readable($this->getCacheFile())) {
+            $this->fontLookup = $distFonts;
+            return;
+        }
 
-            $cacheDataClosure = require $this->getCacheFile();
-            $cacheData = is_array($cacheDataClosure) ? $cacheDataClosure : $cacheDataClosure($fontDir, $rootDir);
+        $cacheDataClosure = require $this->getCacheFile();
+        $cacheData = is_array($cacheDataClosure) ? $cacheDataClosure : $cacheDataClosure($fontDir, $rootDir);
 
-            $this->fontLookup = [];
-            if (is_array($this->fontLookup)) {
-                foreach ($cacheData as $key => $value) {
-                    $this->fontLookup[stripslashes($key)] = $value;
-                }
-            }
-
-            // Merge provided fonts
-            $this->fontLookup += $distFonts;
-        } elseif (strtoupper($this->options->getPdfBackend()) == "TCPDF") { // *** load TCPDF fonts
-            $rootDir = $this->options->getRootDir();
-            $fontdir = K_PATH_FONTS;
-            $arfont = ['courier', 'helvetica', 'times',
-                'freesans', 'freeserif', 'freemono',
-                'dejavusans', 'dejavusanscondensed', 'dejavusansextralight', 'dejavusansmono',
-                'dejavuserif', 'dejavuserifcondensed'];
-            foreach ($arfont as $fontname) {
-                if (file_exists($fontdir . $fontname . ".php")) {
-                    $this->fontLookup[$fontname] = [
-                        'normal' => $fontdir . $fontname,
-                        'bold' => $fontdir . $fontname,
-                        'italic' => $fontdir . $fontname,
-                        'bold_italic' => $fontdir . $fontname];
-                    if (file_exists($fontdir . $fontname . "b.php"))
-                        $this->fontLookup[$fontname]['bold'] = $fontdir . $fontname . "b";
-                    if (file_exists($fontdir . $fontname . "i.php"))
-                        $this->fontLookup[$fontname]['italic'] = $fontdir . $fontname . "i";
-                    if (file_exists($fontdir . $fontname . "bi.php"))
-                        $this->fontLookup[$fontname]['bold_italic'] = $fontdir . $fontname . "bi";
-                }
-            }
-            // add CJK fonts
-            if (file_exists($fontdir . "msungstdlight.php")) {
-                $this->fontLookup['msungstdlight'] = [
-                    'normal' => $fontdir . 'msungstdlight',
-                    'bold' => $fontdir . 'msungstdlight',
-                    'italic' => $fontdir . 'msungstdlight',
-                    'bold_italic' => $fontdir . 'msungstdlight'];
-            }
-            $arfont = ['hysmyeongjostdmedium', 'kozgopromedium', 'kozminproregular', 'msungstdlight'];
-            foreach ($arfont as $fontname) {
-                if (file_exists($fontdir . $fontname . ".php")) {
-                    $this->fontLookup[$fontname] = [
-                        'normal' => $fontdir . $fontname,
-                        'bold' => $fontdir . $fontname,
-                        'italic' => $fontdir . $fontname,
-                        'bold_italic' => $fontdir . $fontname];
-                }
+        $this->fontLookup = [];
+        if (is_array($this->fontLookup)) {
+            foreach ($cacheData as $key => $value) {
+                $this->fontLookup[stripslashes($key)] = $value;
             }
         }
+
+        // Merge provided fonts
+        $this->fontLookup += $distFonts;
     }
 
     /**
@@ -253,12 +211,12 @@ class FontMetrics
         $entry[$styleString] = $cacheEntry;
 
         // Download the remote file
-        [$protocol, $baseHost, $basePath] = Helpers::explode_url($remoteFile);
-        if (!$this->options->isRemoteEnabled() && ($protocol != "" && $protocol !== "file://")) {
+        [$protocol] = Helpers::explode_url($remoteFile);
+        if (!$this->options->isRemoteEnabled() && ($protocol !== "" && $protocol !== "file://")) {
             Helpers::record_warnings(E_USER_WARNING, "Remote font resource $remoteFile referenced, but remote file download is disabled.", __FILE__, __LINE__);
             return false;
         }
-        if ($protocol == "" || $protocol === "file://") {
+        if ($protocol === "" || $protocol === "file://") {
             $realfile = realpath($remoteFile);
 
             $rootDir = realpath($this->options->getRootDir());
@@ -286,7 +244,7 @@ class FontMetrics
             $remoteFile = $realfile;
         }
         list($remoteFileContent, $http_response_header) = @Helpers::getFileContent($remoteFile, $context);
-        if (empty($remoteFileContent)) {
+        if ($remoteFileContent === null) {
             return false;
         }
 
@@ -393,7 +351,7 @@ class FontMetrics
     }
 
     /**
-     * Calculates font height
+     * Calculates font height, in points
      *
      * @param string $font
      * @param float $size
@@ -403,6 +361,19 @@ class FontMetrics
     public function getFontHeight($font, $size)
     {
         return $this->canvas->get_font_height($font, $size);
+    }
+
+    /**
+     * Calculates font baseline, in points
+     *
+     * @param string $font
+     * @param float $size
+     *
+     * @return float
+     */
+    public function getFontBaseline($font, $size)
+    {
+        return $this->canvas->get_font_baseline($font, $size);
     }
 
     /**
