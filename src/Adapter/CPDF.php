@@ -177,13 +177,13 @@ class CPDF implements Canvas
     {
         if (is_array($paper)) {
             $size = $paper;
-        } else if (isset(self::$PAPER_SIZES[mb_strtolower($paper)])) {
-            $size = self::$PAPER_SIZES[mb_strtolower($paper)];
+        } else if (isset(self::$PAPER_SIZES[mb_strtolower($paper ?? "")])) { //***
+            $size = self::$PAPER_SIZES[mb_strtolower($paper ?? "")]; //***
         } else {
             $size = self::$PAPER_SIZES["letter"];
         }
 
-        if (mb_strtolower($orientation) === "landscape") {
+        if (mb_strtolower($orientation ?? "") === "landscape") { //***
             [$size[2], $size[3]] = [$size[3], $size[2]];
         }
 
@@ -769,7 +769,7 @@ class CPDF implements Canvas
         if ($filename !== null && file_exists($filename)) {
             return $filename;
         }
- 
+
         $func_name = "imagecreatefrom$type";
 
         if (!function_exists($func_name)) {
