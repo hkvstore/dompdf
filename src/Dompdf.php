@@ -156,14 +156,6 @@ class Dompdf
     private $protocol = "";
 
     /**
-     * HTTP context created with stream_context_create()
-     * Will be used for file_get_contents
-     *
-     * @var resource
-     */
-    private $httpContext;
-
-    /**
      * The system's locale
      *
      * @var string
@@ -361,7 +353,7 @@ class Dompdf
             [$this->protocol, $this->baseHost, $this->basePath] = Helpers::explode_url($file);
         }
         $protocol = strtolower($this->protocol);
-        
+
         $uri = Helpers::build_url($this->protocol, $this->baseHost, $this->basePath, $file);
 
         if (!in_array($protocol, $this->allowedProtocols, true)) {
@@ -400,7 +392,7 @@ class Dompdf
             $uri = $realfile;
         }
 
-        [$contents, $http_response_header] = Helpers::getFileContent($uri, $this->httpContext);
+        [$contents, $http_response_header] = Helpers::getFileContent($uri, $this->options->getHttpContext());
         if ($contents === null) {
             throw new Exception("File '$file' not found.");
         }
@@ -1036,8 +1028,8 @@ class Dompdf
         $size = $paperSize !== null ? $paperSize : $this->paperSize;
         if (is_array($size)) {
             return $size;
-        } else if (isset(Adapter\CPDF::$PAPER_SIZES[mb_strtolower($size)])) {
-            return Adapter\CPDF::$PAPER_SIZES[mb_strtolower($size)];
+        } else if (isset(Adapter\CPDF::$PAPER_SIZES[mb_strtolower($size ?? "")])) { //***
+            return Adapter\CPDF::$PAPER_SIZES[mb_strtolower($size ?? "")]; //***
         } else {
             return Adapter\CPDF::$PAPER_SIZES["letter"];
         }
@@ -1244,12 +1236,12 @@ class Dompdf
     /**
      * Sets the HTTP context
      *
-     * @param resource $httpContext
+     * @param resource|array $httpContext
      * @return $this
      */
     public function setHttpContext($httpContext)
     {
-        $this->httpContext = $httpContext;
+        $this->options->setHttpContext($httpContext);
         return $this;
     }
 
@@ -1269,7 +1261,7 @@ class Dompdf
      */
     public function getHttpContext()
     {
-        return $this->httpContext;
+        return $this->options->getHttpContext();
     }
 
     /**
@@ -1363,6 +1355,11 @@ class Dompdf
      */
     public function setOptions(Options $options)
     {
+        // For backwards compatibility
+        if ($this->options && $this->options->getHttpContext() && !$options->getHttpContext()) {
+            $options->setHttpContext($this->options->getHttpContext());
+        }
+
         $this->options = $options;
         $fontMetrics = $this->getFontMetrics();
         if (isset($fontMetrics)) {

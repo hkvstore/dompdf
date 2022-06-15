@@ -172,14 +172,14 @@ class TCPDF implements Canvas //***
     {
         if (is_array($paper)) {
             $size = $paper;
-        } elseif (isset(self::$PAPER_SIZES[mb_strtolower($paper)])) {
-            $size = self::$PAPER_SIZES[mb_strtolower($paper)];
+        } elseif (isset(self::$PAPER_SIZES[mb_strtolower($paper ?? "")])) { //***
+            $size = self::$PAPER_SIZES[mb_strtolower($paper ?? "")]; //***
         } else {
             $size = self::$PAPER_SIZES["letter"];
         }
 
         $ori = 'P'; // ***
-        if (mb_strtolower($orientation) === "landscape") {
+        if (mb_strtolower($orientation ?? "") === "landscape") { //***
             list($size[2], $size[3]) = [$size[3], $size[2]];
             $ori = 'L'; // ***
         }
