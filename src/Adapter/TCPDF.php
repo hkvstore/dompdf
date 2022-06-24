@@ -12,10 +12,10 @@ namespace Dompdf\Adapter; //***
 
 use Dompdf\Canvas;
 use Dompdf\Dompdf;
-use Dompdf\Helpers;
 use Dompdf\Exception;
+use Dompdf\FontMetrics;
+use Dompdf\Helpers;
 use Dompdf\Image\Cache;
-use Dompdf\PhpEvaluator;
 
 /**
  * TCPDF PDF Rendering interface
@@ -134,6 +134,13 @@ class TCPDF implements Canvas //***
     private $_pages;
 
     /**
+     * Currently-applied opacity level (0 - 1)
+     *
+     * @var float
+     */
+    protected $_current_opacity = 1; //***
+
+    /**
      * Array of temporary cached images to be deleted when processing is complete
      *
      * @var array
@@ -168,14 +175,13 @@ class TCPDF implements Canvas //***
      * @param string $orientation The orientation of the document (either 'landscape' or 'portrait')
      * @param DOMPDF $dompdf
      */
-    public function __construct($paper = "letter", $orientation = "portrait", Dompdf $dompdf = null) //***
+    public function __construct($paper = "letter", $orientation = "portrait", ?Dompdf $dompdf = null)
     {
         if (is_array($paper)) {
-            $size = $paper;
-        } elseif (isset(self::$PAPER_SIZES[mb_strtolower($paper ?? "")])) { //***
-            $size = self::$PAPER_SIZES[mb_strtolower($paper ?? "")]; //***
+            $size = array_map("floatval", $paper);
         } else {
-            $size = self::$PAPER_SIZES["letter"];
+            $paper = strtolower($paper);
+            $size = self::$PAPER_SIZES[$paper] ?? self::$PAPER_SIZES["letter"];
         }
 
         $ori = 'P'; // ***
@@ -270,7 +276,7 @@ class TCPDF implements Canvas //***
      * @param string $label  label of the value (Creator, Producter, etc.)
      * @param string $value  the text to set
      */
-    public function add_info($label, $value)
+    public function add_info(string $label, string $value): void //***
     {
         global $_dompdf_warnings;
 
@@ -713,24 +719,17 @@ class TCPDF implements Canvas //***
     /**
      *
      * @param unknown_type $font
-     * @return unknown_type
+     * @return string
      */
-    protected function _get_font($font)
+    public function _get_font($font, $subtype = '') //***
     {
         $name = basename($font);
         $a = explode('-', $name);
         $f = strtolower($a[0]);
-        $s = '';
-
-        //*** if (strpos($a[1], 'Bold') !== false) {
-        //     $s .= 'B';
-        // }
-        // if (strpos($a[1], 'Italic') !== false) {
-        //     $s .= 'I';
-        // }
 
         //Helpers::dompdf_debug("trace2", "($font): returns $f, $s");
-        return ['family' => $f, 'style' => $s];
+        $this->_pdf->setFont($font, $subtype);
+        return $this->_pdf->getFontFamily();
     }
 
     /******************************************************************************
@@ -801,26 +800,14 @@ class TCPDF implements Canvas //***
 
     /**
      * Draws a line from x1,y1 to x2,y2
-     *
-     * See {@link Style::munge_color()} for the format of the color array.
-     * See {@link Cpdf::setLineStyle()} for a description of the format of the
-     * $style parameter (aka dash).
-     *
-     * @param float $x1
-     * @param float $y1
-     * @param float $x2
-     * @param float $y2
-     * @param array $color
-     * @param float $width
-     * @param array $style
      */
-    public function line($x1, $y1, $x2, $y2, $color, $width, $style = [], $blend = "Normal", $opacity = 1.0)
+    public function line($x1, $y1, $x2, $y2, $color, $width, $style = [], $cap = "butt") //***
     {
         //Helpers::dompdf_debug("trace", "($x1, $y1, $x2, $y2, [$color[0], $color[1], $color[2]], $width, $style, $blend, $opacity)");
 
         //$this->_set_stroke_color($color);
         //$this->_set_line_style($width, "butt", "", $style);
-        $this->_set_line_transparency($blend, $opacity);
+        $this->_set_line_transparency("Normal", $this->_current_opacity);
 
         $this->_pdf->Line($x1, $y1, $x2, $y2, $this->_make_line_style($color, $width, "butt", "", $style));
     }
@@ -828,69 +815,43 @@ class TCPDF implements Canvas //***
     /**
      * Draws an arc
      */
-    public function arc($x, $y, $r1, $r2, $astart, $aend, $color, $width, $style = []) //***
+    public function arc($x, $y, $r1, $r2, $astart, $aend, $color, $width, $style = [], $cap = "butt") //***
     {
         $this->_set_stroke_color($color);
         $this->_set_line_style($width, "butt", "", $style);
 
         $this->_pdf->ellipse($x, $this->y($y), $r1, $r2, 0, 8, $astart, $aend, false, false, true, false);
+        $this->_set_line_transparency("Normal", $this->_current_opacity);
     }
 
     /**
      * Draws a rectangle at x1,y1 with width w and height h
-     *
-     * See {@link Style::munge_color()} for the format of the color array.
-     * See {@link Cpdf::setLineStyle()} for a description of the $style
-     * parameter (aka dash)
-     *
-     * @param float $x1
-     * @param float $y1
-     * @param float $w
-     * @param float $h
-     * @param array $color
-     * @param float $width
-     * @param array $style
      */
-    public function rectangle($x1, $y1, $w, $h, $color, $width, $style = null, $blend = "Normal", $opacity = 1.0)
+    public function rectangle($x1, $y1, $w, $h, $color, $width, $style = [], $cap = "butt") //***
     {
         //Helpers::dompdf_debug("trace", "($x1, $y1, $w, $h, [$color[0], $color[1], $color[2]], $width, $style, $blend, $opacity)");
 
         //$this->_set_stroke_color($color);
         //$this->_set_line_style($width, "square", "miter", $style);
-        $this->_set_line_transparency($blend, $opacity);
+        $this->_set_line_transparency("Normal", $this->_current_opacity); //***
 
         $this->_pdf->Rect($x1, $y1, $w, $h, 'D', $this->_make_line_style($color, $width, "square", "miter", $style));
     }
 
     /**
      * Draws a filled rectangle at x1,y1 with width w and height h
-     *
-     * See {@link Style::munge_color()} for the format of the color array.
-     *
-     * @param float $x1
-     * @param float $y1
-     * @param float $w
-     * @param float $h
-     * @param array $color
      */
-    public function filled_rectangle($x1, $y1, $w, $h, $color, $blend = "Normal", $opacity = 1.0)
+    public function filled_rectangle($x1, $y1, $w, $h, $color) //***
     {
         //var_dump($color);
         //Helpers::dompdf_debug("trace", "($x1, $y1, $w, $h, [$color[0], $color[1], $color[2]], $blend, $opacity)");
 
-        //$this->_set_stroke_color($color);
-        //$this->_set_fill_color($color);
-        //$this->_set_line_style(1, "square", "miter", array());
-        $this->_set_line_transparency($blend, $opacity);
-        $this->_set_fill_transparency($blend, $opacity);
-        try { //***
-            if (isset($color["alpha"])) {
-                $this->_pdf->setAlpha($color["alpha"]);
-            }
-            $this->_pdf->Rect($x1, $y1, $w, $h, 'F', $this->_make_line_style($color, 1, "square", "miter", []), $this->_get_rgb($color));
-        } finally {
-            $this->_pdf->setAlpha($alpha);
+        $this->_set_line_transparency("Normal", $this->_current_opacity);
+        $this->_set_fill_transparency("Normal", $this->_current_opacity);
+        if (isset($color["alpha"])) {
+            $this->_pdf->setAlpha($color["alpha"]);
         }
+        $this->_pdf->Rect($x1, $y1, $w, $h, 'F', $this->_make_line_style($color, 1, "square", "miter", []), $this->_get_rgb($color));
     }
 
     /**
@@ -911,7 +872,12 @@ class TCPDF implements Canvas //***
      */
     public function clipping_roundrectangle($x1, $y1, $w, $h, $rTL, $rTR, $rBR, $rBL) //***
     {
-        $this->_pdf->clippingRectangleRounded($x1, $this->y($y1) - $h, $w, $h, $rTL, $rTR, $rBR, $rBL);
+        // Not implemented
+    }
+
+    public function clipping_polygon(array $points): void
+    {
+         // Not implemented
     }
 
     /**
@@ -1002,7 +968,7 @@ class TCPDF implements Canvas //***
      * @param array $style
      * @param bool  $fill  Fills the polygon if true
      */
-    public function polygon($points, $color, $width = null, $style = null, $fill = false, $blend = "Normal", $opacity = 1.0)
+    public function polygon($points, $color, $width = null, $style = [], $fill = false, $blend = "Normal", $opacity = 1.0)
     {
         //Helpers::dompdf_debug("trace", "($points, [$color[0], $color[1], $color[2]], $width, $style, $fill, $blend, $opacity)");
 
@@ -1036,7 +1002,7 @@ class TCPDF implements Canvas //***
      * @param array $style
      * @param bool $fill Fills the circle if true
      */
-    public function circle($x, $y, $r, $color, $width = null, $style = null, $fill = false, $blend = "Normal", $opacity = 1.0)
+    public function circle($x, $y, $r, $color, $width = null, $style = [], $fill = false, $blend = "Normal", $opacity = 1.0)
     {
         //Helpers::dompdf_debug("trace", "($x, $y, $r, [$color[0], $color[1], $color[2]], $width, $style, $fill, $blend, $opacity)");
 
@@ -1068,21 +1034,20 @@ class TCPDF implements Canvas //***
      * @param int $w width (in pixels)
      * @param int $h height (in pixels)
      */
-    public function image($img, $x, $y, $w, $h, $resolution = "normal")
+    public function image($img, $x, $y, $w, $h, $resolution = "normal") //***
     {
-        //*** if ($img_type == 'gif') {
-        //     $img_url = $this->_convert_gif_to_png($img_url);
-        //     $img_type = 'png';
-        // }
-
-        $path_parts = pathinfo($img);
-        $img_url = $img;
-        $img_type = strtolower($path_parts['extension']);
-        if ($img_type == 'gif') {
-            $img_url = $this->_convert_gif_to_png($img_url);
+        $size = getimagesize($img);
+        if ($size[2] == IMG_GIF) {
+            $img_type = 'gif';
+        } elseif ($size[2] == IMG_JPG) {
+            $img_type = 'jpg';
+        } elseif ($size[2] == IMG_BMP) {
+            $img_type = 'bmp';
+        } else {
             $img_type = 'png';
         }
-        $this->_pdf->Image($img_url, $x, $y, $w, $h, $img_type);
+        $img_url = $img;
+        @$this->_pdf->Image($img_url, $x, $y, $w, $h, $img_type);
     }
 
     /**
@@ -1108,8 +1073,9 @@ class TCPDF implements Canvas //***
         //***$this->_set_line_transparency($blend, $opacity);
         //***$this->_set_fill_transparency($blend, $opacity);
 
-        $fontdata = $this->_get_font($font);
-        $this->_pdf->SetFont($fontdata['family'], $fontdata['style'] /*strpos($font, '-Bold') === false ? '' : 'B'*/, $size, $font);
+        $fontFamily = $this->_get_font($font);
+        $fontStyle = $this->_pdf->getFontStyle(); //***
+        $this->_pdf->SetFont($fontFamily, $fontStyle, $size, $font); //***
 
         //$this->_pdf->SetFontSize($size); // ???
 
@@ -1197,8 +1163,9 @@ class TCPDF implements Canvas //***
         // Determine the additional width due to extra spacing
         $num_spaces = mb_substr_count($text, " ");
         $delta = $word_spacing * $num_spaces;
-        $fontdata = $this->_get_font($font);
-        $result = $this->_pdf->GetStringWidth($text, $fontdata['family'], $fontdata['style'], $size) + $delta; //$font);
+        $fontFamily = $this->_get_font($font);
+        $fontStyle = $this->_pdf->getFontStyle(); //***
+        $result = $this->_pdf->GetStringWidth($text, $fontFamily, $fontStyle, $size) + $delta; //$font); //***
         //Helpers::dompdf_debug("trace", "($text, ". basename($font) .", $size, $word_spacing, $char_spacing): returns $result");
         return $result;
     }
@@ -1218,9 +1185,8 @@ class TCPDF implements Canvas //***
             $fontFamily = $this->_pdf->getFontFamily();
             $fontStyle = $this->_pdf->getFontStyle();
         } else {
-            $fontdata = $this->_get_font($font);
-            $fontFamily = $fontdata['family'];
-            $fontStyle = $fontdata['style'];
+            $fontFamily = $this->_get_font($font);
+            $fontStyle = $this->_pdf->getFontStyle(); //***
             $this->_pdf->SetFont($fontFamily, $fontStyle, $size, $font);
         }
         if (strpos($fontStyle, 'B') !== false) {
@@ -1236,10 +1202,9 @@ class TCPDF implements Canvas //***
     /**
      * Get font baseline
      */
-    function get_font_baseline($font, $size) // b3
+    public function get_font_baseline($font, $size) // b3
     {
-        //***return $this->get_font_height($font, $size) / DOMPDF_FONT_HEIGHT_RATIO;
-        $ratio = $this->_dompdf->get_option("font_height_ratio"); //***
+        $ratio = $this->_dompdf->getOptions()->getFontHeightRatio(); //***
         return $this->get_font_height($font, $size) / $ratio; //***
     }
 
@@ -1249,17 +1214,18 @@ class TCPDF implements Canvas //***
      * @param $opacity
      * @param $mode
      */
-    function set_opacity($opacity, $mode = "Normal")
+    public function set_opacity(float $opacity, string $mode = "Normal"): void
     {
         //Helpers::dompdf_debug("trace", "($opacity, $mode)");
         $this->_set_line_transparency($mode, $opacity);
         $this->_set_fill_transparency($mode, $opacity);
+        $this->_current_opacity = $opacity; //***
     }
 
     /**
      * Set default view
      */
-    function set_default_view($view, $options = []) // b3
+    public function set_default_view($view, $options = []) // b3
     {
         array_unshift($options, $view);
         $currentPage = $this->_pdf->currentPage;
@@ -1386,21 +1352,19 @@ class TCPDF implements Canvas //***
         $this->_page_text[] = compact("_t", "x", "y", "text", "font", "size", "color", "word_space", "char_space", "angle");
     }
 
-    /**
-     * Processes a script on every page
-     *
-     * The variables $pdf, $PAGE_NUM, and $PAGE_COUNT are available.
-     *
-     * This function can be used to add page numbers to all pages
-     * after the first one, for example.
-     *
-     * @param string $code the script code
-     * @param string $type the language type for script
-     */
-    public function page_script($code, $type = "text/php")
+    public function page_line($x1, $y1, $x2, $y2, $color, $width, $style = []) //***
     {
-        $_t = "script";
-        $this->_page_text[] = compact("_t", "code", "type");
+        // Not implemented
+    }
+
+    /**
+     * Processes a callback or script on every page.
+     *
+     * @param callable|string $callback The callback function or PHP script to process on every page
+     */
+    public function page_script($callback): void //***
+    {
+        // Not implemented
     }
 }
 
@@ -1546,15 +1510,4 @@ class My_TCPDF extends \TCPDF //***
         //Helpers::dompdf_debug("trace", "Enter My_TCPDF.getObject($id)");
         return $this->dompdf_objects[$id];
     }
-}
-
-/**
- * Ends with
- */
-function endsWith($haystack, $needle, $case = true)
-{
-    if ($case) {
-        return (strcmp(substr($haystack, strlen($haystack) - strlen($needle)), $needle) === 0);
-    }
-    return (strcasecmp(substr($haystack, strlen($haystack) - strlen($needle)), $needle) === 0);
 }

@@ -46,7 +46,7 @@ class CanvasFactory
             }
 
             else {
-                if ($backend === "gd" && extension_loaded('gd')) {
+                if ($backend === "gd" && extension_loaded("gd")) {
                     $class = "Dompdf\\Adapter\\GD";
                 } elseif ($backend === "cpdf") { //***
                     $class = "Dompdf\\Adapter\\CPDF";
