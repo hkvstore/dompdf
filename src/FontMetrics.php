@@ -380,7 +380,7 @@ class FontMetrics
     public function getFont($familyRaw, $subtypeRaw = "normal")
     {
         if ($this->canvas instanceof \Dompdf\Adapter\TCPDF) { // TCPDF //***
-            return $this->canvas->_get_font($familyRaw, $subtypeRaw);
+            return $this->canvas->get_font($familyRaw, $subtypeRaw);
         }
 
         static $cache = [];
