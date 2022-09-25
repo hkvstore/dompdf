@@ -1,13 +1,9 @@
 <?php
 /**
  * @package dompdf
- * @link    http://dompdf.github.com/
- * @author  Benj Carson <benjcarson@digitaljunkies.ca>
- * @author  Helmut Tischer <htischer@weihenstephan.org>
- * @author  Fabien Ménager <fabien.menager@gmail.com>
+ * @link    https://github.com/dompdf/dompdf
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  */
-
 namespace Dompdf;
 
 use FontLib\Font;
@@ -132,10 +128,10 @@ class FontMetrics
         if (is_readable($legacyCacheFile)) {
             $fontDir = $this->options->getFontDir();
             $rootDir = $this->options->getRootDir();
-
+    
             if (!defined("DOMPDF_DIR")) { define("DOMPDF_DIR", $rootDir); }
             if (!defined("DOMPDF_FONT_DIR")) { define("DOMPDF_FONT_DIR", $fontDir); }
-
+    
             $cacheDataClosure = require $legacyCacheFile;
             $cacheData = is_array($cacheDataClosure) ? $cacheDataClosure : $cacheDataClosure($fontDir, $rootDir);
             if (is_array($cacheData)) {
@@ -217,12 +213,14 @@ class FontMetrics
         $allowed_protocols = $this->options->getAllowedProtocols();
         if (!array_key_exists($protocol, $allowed_protocols)) {
             Helpers::record_warnings(E_USER_WARNING, "Permission denied on $remoteFile. The communication protocol is not supported.", __FILE__, __LINE__);
+            return false;
         }
 
         foreach ($allowed_protocols[$protocol]["rules"] as $rule) {
             [$result, $message] = $rule($remoteFile);
             if ($result !== true) {
                 Helpers::record_warnings(E_USER_WARNING, "Error loading $remoteFile: $message", __FILE__, __LINE__);
+                return false;
             }
         }
 
@@ -366,6 +364,17 @@ class FontMetrics
     }
 
     /**
+     * @param $family_raw
+     * @param string $subtype_raw
+     * @return string
+     * @deprecated
+     */
+    public function get_font($family_raw, $subtype_raw = "normal")
+    {
+        return $this->getFont($family_raw, $subtype_raw);
+    }
+
+    /**
      * Resolves a font family & subtype into an actual font file
      * Subtype can be one of 'normal', 'bold', 'italic' or 'bold_italic'.  If
      * the particular font family has no suitable font file, the default font
@@ -415,19 +424,19 @@ class FontMetrics
             if (isset($families[$family][$subtype])) {
                 return $cache[$familyRaw][$subtypeRaw] = $families[$family][$subtype];
             }
-
+    
             if (!isset($families[$family])) {
                 continue;
             }
-
+    
             $family = $families[$family];
-
+    
             foreach ($family as $sub => $font) {
                 if (strpos($subtype, $sub) !== false) {
                     return $cache[$familyRaw][$subtypeRaw] = $font;
                 }
             }
-
+    
             if ($subtype !== "normal") {
                 foreach ($family as $sub => $font) {
                     if ($sub !== "normal") {
@@ -435,14 +444,14 @@ class FontMetrics
                     }
                 }
             }
-
+    
             $subtype = "normal";
-
+    
             if (isset($family[$subtype])) {
                 return $cache[$familyRaw][$subtypeRaw] = $family[$subtype];
             }
         }
-
+        
         return null;
     }
 

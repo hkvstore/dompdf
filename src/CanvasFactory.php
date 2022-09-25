@@ -1,8 +1,7 @@
 <?php
 /**
  * @package dompdf
- * @link    http://dompdf.github.com/
- * @author  Benj Carson <benjcarson@digitaljunkies.ca>
+ * @link    https://github.com/dompdf/dompdf
  * @license http://www.gnu.org/copyleft/lesser.html GNU Lesser General Public License
  */
 namespace Dompdf;
@@ -46,7 +45,7 @@ class CanvasFactory
             }
 
             else {
-                if ($backend === "gd" && extension_loaded("gd")) {
+                if ($backend === "gd" && extension_loaded('gd')) {
                     $class = "Dompdf\\Adapter\\GD";
                 } elseif ($backend === "cpdf") { //***
                     $class = "Dompdf\\Adapter\\CPDF";
