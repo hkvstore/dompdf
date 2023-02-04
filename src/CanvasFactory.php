@@ -25,13 +25,13 @@ class CanvasFactory
 
     /**
      * @param Dompdf $dompdf
-     * @param string|array $paper
+     * @param string|float[] $paper
      * @param string $orientation
-     * @param string $class
+     * @param string|null    $class
      *
      * @return Canvas
      */
-    static function get_instance(Dompdf $dompdf, $paper = null, $orientation = null, $class = null)
+    static function get_instance(Dompdf $dompdf, $paper, string $orientation, ?string $class = null)
     {
         $backend = strtolower($dompdf->getOptions()->getPdfBackend());
 

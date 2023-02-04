@@ -10,10 +10,10 @@ use Dompdf\Dompdf;
 use Dompdf\Exception;
 use Dompdf\Frame;
 use Dompdf\FrameDecorator\AbstractFrameDecorator;
-use DOMXPath;
 use Dompdf\FrameDecorator\Page as PageFrameDecorator;
 use Dompdf\FrameReflower\Page as PageFrameReflower;
 use Dompdf\Positioner\AbstractPositioner;
+use DOMXPath;
 
 /**
  * Contains frame decorating logic
@@ -38,12 +38,12 @@ class Factory
     /**
      * Decorate the root Frame
      *
-     * @param $root   Frame The frame to decorate
-     * @param $dompdf Dompdf The dompdf instance
+     * @param Frame  $root   The frame to decorate
+     * @param Dompdf $dompdf The dompdf instance
      *
      * @return PageFrameDecorator
      */
-    static function decorate_root(Frame $root, Dompdf $dompdf)
+    public static function decorate_root(Frame $root, Dompdf $dompdf): PageFrameDecorator
     {
         $frame = new PageFrameDecorator($root, $dompdf);
         $frame->set_reflower(new PageFrameReflower($frame));
@@ -57,13 +57,13 @@ class Factory
      *
      * @param Frame $frame   The frame to decorate
      * @param Dompdf $dompdf The dompdf instance
-     * @param Frame $root    The root of the frame
+     * @param Frame|null $root   The root of the frame
      *
      * @throws Exception
-     * @return AbstractFrameDecorator
+     * @return AbstractFrameDecorator|null
      * FIXME: this is admittedly a little smelly...
      */
-    static function decorate_frame(Frame $frame, Dompdf $dompdf, Frame $root = null)
+    public static function decorate_frame(Frame $frame, Dompdf $dompdf, ?Frame $root = null): ?AbstractFrameDecorator
     {
         $style = $frame->get_style();
         $display = $style->display;
@@ -164,7 +164,7 @@ class Factory
                 if ($style->_dompdf_keep !== "yes") {
                     // Remove the node and the frame
                     $frame->get_parent()->remove_child($frame);
-                    return;
+                    return null;
                 }
 
                 $positioner = "NullPositioner";
@@ -178,11 +178,9 @@ class Factory
 
         if ($position === "absolute") {
             $positioner = "Absolute";
-        } else {
-            if ($position === "fixed") {
+        } elseif ($position === "fixed") {
                 $positioner = "Fixed";
             }
-        }
 
         $node = $frame->get_node();
 
@@ -249,10 +247,11 @@ class Factory
     /**
      * Creates Positioners
      *
-     * @param string $type type of positioner to use
+     * @param string $type Type of positioner to use
+     *
      * @return AbstractPositioner
      */
-    protected static function getPositionerInstance($type)
+    protected static function getPositionerInstance(string $type): AbstractPositioner
     {
         if (!isset(self::$_positioners[$type])) {
             $class = '\\Dompdf\\Positioner\\'.$type;
