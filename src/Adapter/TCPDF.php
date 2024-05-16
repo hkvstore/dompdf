@@ -281,6 +281,19 @@ class TCPDF implements Canvas
     }
 
     /**
+     * Determines if the font supports the given character
+     *
+     * @param string $font The font file to use
+     * @param string $char The character to check
+     *
+     * @return bool
+     */
+    public function font_supports_char(string $font, string $char): bool
+    {
+        return true; // Not implemented
+    }
+
+    /**
      * Opens a new "object" (template in PDFLib-speak)
      *
      * While an object is open, all drawing actions are recored in the object,
@@ -662,8 +675,8 @@ class TCPDF implements Canvas
      */
     public function arc($x, $y, $r1, $r2, $astart, $aend, $color, $width, $style = [], $cap = "butt")
     {
-        $this->_set_stroke_color($color);
-        $this->_set_line_style($width, "butt", "", $style);
+        //*** $this->_set_stroke_color($color);
+        //*** $this->_set_line_style($width, "butt", "", $style);
         $this->_pdf->ellipse($x, $this->y($y), $r1, $r2, 0, 8, $astart, $aend, false, false, true, false);
         $this->_set_line_transparency("Normal", $this->_current_opacity);
     }
@@ -927,6 +940,8 @@ class TCPDF implements Canvas
      */
     public function get_text_width($text, $font, $size, $word_spacing = 0, $char_spacing = 0)
     {
+        // remove non-printable characters since they have no width
+        $text = preg_replace('/[\x00-\x1F\x7F]/u', '', $text); //***
         // Determine the additional width due to extra spacing
         $num_spaces = mb_substr_count($text, " ");
         $delta = $word_spacing * $num_spaces;

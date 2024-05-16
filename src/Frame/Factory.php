@@ -28,7 +28,7 @@ use DOMXPath;
 class Factory
 {
 
-     /**
+    /**
      * Array of positioners for specific frame types
      *
      * @var AbstractPositioner[]
@@ -55,8 +55,8 @@ class Factory
     /**
      * Decorate a Frame
      *
-     * @param Frame $frame   The frame to decorate
-     * @param Dompdf $dompdf The dompdf instance
+     * @param Frame      $frame  The frame to decorate
+     * @param Dompdf     $dompdf The dompdf instance
      * @param Frame|null $root   The root of the frame
      *
      * @throws Exception
@@ -179,8 +179,8 @@ class Factory
         if ($position === "absolute") {
             $positioner = "Absolute";
         } elseif ($position === "fixed") {
-                $positioner = "Fixed";
-            }
+            $positioner = "Fixed";
+        }
 
         $node = $frame->get_node();
 
