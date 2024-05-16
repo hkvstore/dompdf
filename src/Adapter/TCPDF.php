@@ -1109,13 +1109,22 @@ class TCPDF implements Canvas
     }
 
     /**
-     * Processes a callback or script on every page.
+     * Processes a callback or script on every page
      *
      * @param callable|string $callback The callback function or PHP script to process on every page
      */
     public function page_script($callback): void
     {
-        // Not implemented
+        $pageNumber = 1;
+
+        foreach ($this->_pages as $pid) {
+            $this->_pdf->setPage($pid);
+
+            $fontMetrics = $this->_dompdf->getFontMetrics();
+            $callback($pageNumber, $this->get_page_count(), $this, $fontMetrics);
+
+            $pageNumber++;
+        }
     }
 }
 
