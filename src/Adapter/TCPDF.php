@@ -662,10 +662,35 @@ class TCPDF implements Canvas
     }
 
     /**
+	 * Set line style
+	 * @param array $style Line style. Array with keys among the following:
+	 * <ul>
+	 *	 <li>width (float): Width of the line in user units.</li>
+	 *	 <li>cap (string): Type of cap to put on the line. Possible values are:
+	 * butt, round, square. The difference between "square" and "butt" is that
+	 * "square" projects a flat end past the end of the line.</li>
+	 *	 <li>join (string): Type of join. Possible values are: miter, round,
+	 * bevel.</li>
+	 *	 <li>dash (mixed): Dash pattern. Is 0 (without dash) or string with
+	 * series of length values, which are the lengths of the on and off dashes.
+	 * For example: "2" represents 2 on, 2 off, 2 on, 2 off, ...; "2,1" is 2 on,
+	 * 1 off, 2 on, 1 off, ...</li>
+	 *	 <li>phase (integer): Modifier on the dash pattern which is used to shift
+	 * the point at which the pattern starts.</li>
+	 *	 <li>color (array): Draw color. Format: array(GREY) or array(R,G,B) or array(C,M,Y,K) or array(C,M,Y,K,SpotColorName).</li>
+	 * </ul>
+	 */
+    protected function _set_line_style($width, $cap, $join, $dash)
+    {
+        $this->_pdf->setLineStyle(["width" => $width, "cap" => $cap, "join" => $join, "dash" => is_array($dash) ? implode(",", $dash) : 0]);
+    }
+
+    /**
      * Draws a line from x1,y1 to x2,y2
      */
     public function line($x1, $y1, $x2, $y2, $color, $width, $style = [], $cap = "butt")
     {
+        $this->_set_line_style($width, $cap, "", $style);
         $this->_set_line_transparency("Normal", $this->_current_opacity);
         $this->_pdf->Line($x1, $y1, $x2, $y2, $this->_make_line_style($color, $width, "butt", "", $style));
     }
@@ -675,8 +700,7 @@ class TCPDF implements Canvas
      */
     public function arc($x, $y, $r1, $r2, $astart, $aend, $color, $width, $style = [], $cap = "butt")
     {
-        //*** $this->_set_stroke_color($color);
-        //*** $this->_set_line_style($width, "butt", "", $style);
+        $this->_set_line_style($width, $cap, "", $style);
         $this->_pdf->ellipse($x, $this->y($y), $r1, $r2, 0, 8, $astart, $aend, false, false, true, false);
         $this->_set_line_transparency("Normal", $this->_current_opacity);
     }
@@ -686,6 +710,7 @@ class TCPDF implements Canvas
      */
     public function rectangle($x1, $y1, $w, $h, $color, $width, $style = [], $cap = "butt")
     {
+        $this->_set_line_style($width, $cap, "", $style);
         $this->_set_line_transparency("Normal", $this->_current_opacity);
         $this->_pdf->Rect($x1, $y1, $w, $h, "D", $this->_make_line_style($color, $width, "square", "miter", $style));
     }
@@ -817,6 +842,9 @@ class TCPDF implements Canvas
      */
     public function polygon($points, $color, $width = null, $style = [], $fill = false, $blend = "Normal", $opacity = 1.0)
     {
+        if (!$fill && isset($width)) {
+            $this->_set_line_style($width, "square", "miter", $style);
+        }
         $this->_set_line_transparency($blend, $opacity);
         if ($fill) {
             $this->_set_fill_transparency($blend, $opacity);
@@ -841,6 +869,9 @@ class TCPDF implements Canvas
      */
     public function circle($x, $y, $r, $color, $width = null, $style = [], $fill = false, $blend = "Normal", $opacity = 1.0)
     {
+        if (!$fill && isset($width)) {
+            $this->_set_line_style($width, "round", "round", $style);
+        }
         $this->_set_line_transparency($blend, $opacity);
         if ($fill) {
             $this->_set_fill_transparency($blend, $opacity);
