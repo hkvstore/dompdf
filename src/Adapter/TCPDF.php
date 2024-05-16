@@ -120,13 +120,6 @@ class TCPDF implements Canvas
     private $_objs;
 
     /**
-     * Text to display on every page
-     *
-     * @var array
-     */
-    private $_page_text;
-
-    /**
      * Array of pages for accesing after rendering is initially complete
      *
      * @var array
@@ -186,20 +179,19 @@ class TCPDF implements Canvas
         $this->_dompdf = $dompdf;
         $this->_pdf = new My_TCPDF("P", "pt", $paper, true, "UTF-8", false);
         $this->_pdf = new My_TCPDF($ori, "pt", $paper, true, "UTF-8", false);
-        $this->_pdf->SetCreator("DOMPDF Converter");
+        $this->_pdf->setCreator("DOMPDF Converter");
         // CreationDate and ModDate info are added by TCPDF itself
         // don't use TCPDF page defaults
-        $this->_pdf->SetAutoPageBreak(false);
-        $this->_pdf->SetMargins(0, 0, 0, true);
+        $this->_pdf->setAutoPageBreak(false);
+        $this->_pdf->setMargins(0, 0, 0, true);
         $this->_pdf->setPrintHeader(false); // remove default header/footer
         $this->_pdf->setPrintFooter(false);
         $this->_pdf->setHeaderMargin(0);
         $this->_pdf->setFooterMargin(0);
-        $this->_pdf->SetCellPadding(0);
+        $this->_pdf->setCellPadding(0);
         $this->_pdf->AddPage();
-        $this->_pdf->SetDisplayMode("fullpage", "continuous");
+        $this->_pdf->setDisplayMode("fullpage", "continuous");
         $this->_page_number = $this->_page_count = 1;
-        $this->_page_text = [];
         $this->_pages = [$this->_pdf->PageNo()];
         $this->_image_cache = [];
         // other TCPDF stuff
@@ -260,19 +252,19 @@ class TCPDF implements Canvas
         global $_dompdf_warnings;
         switch ($label) {
             case "Creator":
-                $this->_pdf->SetCreator($value);
+                $this->_pdf->setCreator($value);
                 break;
             case "Author":
-                $this->_pdf->SetAuthor($value);
+                $this->_pdf->setAuthor($value);
                 break;
             case "Title":
-                $this->_pdf->SetTitle($value);
+                $this->_pdf->setTitle($value);
                 break;
             case "Subject":
-                $this->_pdf->SetSubject($value);
+                $this->_pdf->setSubject($value);
                 break;
             case "Keywords":
-                $this->_pdf->SetKeywords($value);
+                $this->_pdf->setKeywords($value);
                 break;
             default:
                 $_dompdf_warnings[] = "add_info: label '$label' is not supported by the TCPDF library.";
@@ -514,39 +506,6 @@ class TCPDF implements Canvas
     }
 
     /**
-     * Add text to each page after rendering
-     */
-    protected function _add_page_text()
-    {
-        if (!count($this->_page_text)) {
-            return;
-        }
-        $page_number = 1;
-        $eval = null;
-        foreach ($this->_pages as $pid) {
-            //$this->reopen_object($pid);
-            $this->_pdf->setPage($pid);
-            foreach ($this->_page_text as $pt) {
-                extract($pt);
-                switch ($_t) {
-                    case "text":
-                        $text = str_replace(["{PAGE_NUM}", "{PAGE_COUNT}"], [$page_number, $this->_pdf->getNumPages()], $text);
-                        $this->text($x, $y, $text, $font, $size, $color, $adjust, 0, $angle);
-                        break;
-                    case "script":
-                        if (!$eval) {
-                            $eval = new PHP_Evaluator($this);
-                        }
-                        $eval->evaluate($code, ["PAGE_NUM" => $page_number, "PAGE_COUNT" => $this->_pdf->getNumPages()]);
-                        break;
-                }
-            }
-            //$this->close_object();
-            $page_number++;
-        }
-    }
-
-    /**
      * Add internal links
      */
     protected function _add_internal_links()
@@ -701,7 +660,7 @@ class TCPDF implements Canvas
     public function arc($x, $y, $r1, $r2, $astart, $aend, $color, $width, $style = [], $cap = "butt")
     {
         $this->_set_line_style($width, $cap, "", $style);
-        $this->_pdf->ellipse($x, $this->y($y), $r1, $r2, 0, 8, $astart, $aend, false, false, true, false);
+        $this->_pdf->Ellipse($x, $this->y($y), $r1, $r2, 0, 8, $astart, $aend, false, false, true, false);
         $this->_set_line_transparency("Normal", $this->_current_opacity);
     }
 
@@ -894,17 +853,17 @@ class TCPDF implements Canvas
     public function text($x, $y, $text, $font, $size, $color = [0, 0, 0], $adjust = 0.0, $char_space = 0.0, $angle = 0.0, $blend = "Normal", $opacity = 1.0)
     {
         list($r, $g, $b) = $this->_get_rgb($color);
-        $this->_pdf->SetTextColor($r, $g, $b);
+        $this->_pdf->setTextColor($r, $g, $b);
         $this->_set_line_transparency($blend, $opacity);
         $this->_set_fill_transparency($blend, $opacity);
         $this->get_font($font, "", $size);
         if ($adjust > 0) {
             $a = explode(" ", $text);
-            $this->_pdf->SetXY($x, $y);
+            $this->_pdf->setXY($x, $y);
             for ($i = 0; $i < count($a) - 1; $i++) {
                 $this->_pdf->Write($size, $a[$i] . " ", "");
                 //$this->_pdf->Text($x, $y, $a[$i]." ");
-                $this->_pdf->SetX($this->_pdf->GetX() + $adjust);
+                $this->_pdf->setX($this->_pdf->GetX() + $adjust);
                 //$x += $this->_pdf->GetX() + $adjust;
             }
             $this->_pdf->Write($size, $a[$i], "");
@@ -932,7 +891,7 @@ class TCPDF implements Canvas
     public function add_named_dest($anchorname)
     {
         $link = $this->_pdf->AddLink();
-        $this->_pdf->SetLink($link, -1, -1);
+        $this->_pdf->setLink($link, -1, -1);
         $this->_nameddest[$anchorname] = $link;
     }
 
@@ -1062,7 +1021,6 @@ class TCPDF implements Canvas
     public function stream($filename, $options = null)
     {
         // Add page text
-        $this->_add_page_text();
         $this->_add_internal_links();
         // TCPDF expects file name with extension (cf. Cpdf expects file name without extension)
         if (!preg_match("/\.pdf$/", $filename)) {
@@ -1074,7 +1032,7 @@ class TCPDF implements Canvas
         } else {
             $compress = true;
         }
-        $this->_pdf->SetCompression($compress);
+        $this->_pdf->setCompression($compress);
         $this->_pdf->Output($filename, $options["Attachment"] ? "D" : "I");
     }
 
@@ -1086,7 +1044,6 @@ class TCPDF implements Canvas
      */
     public function output($options = null)
     {
-        $this->_add_page_text();
         $this->_add_internal_links();
         $this->_place_objects();
         if (isset($options["compress"]) && $options["compress"] == 0) {
@@ -1094,7 +1051,7 @@ class TCPDF implements Canvas
         } else {
             $compress = true;
         }
-        $this->_pdf->SetCompression($compress);
+        $this->_pdf->setCompression($compress);
         return $this->_pdf->Output("", "S");
     }
 
@@ -1130,13 +1087,21 @@ class TCPDF implements Canvas
      */
     public function page_text($x, $y, $text, $font, $size, $color = [0, 0, 0], $word_space = 0.0, $char_space = 0.0, $angle = 0)
     {
-        $_t = "text";
-        $this->_page_text[] = compact("_t", "x", "y", "text", "font", "size", "color", "word_space", "char_space", "angle");
+        $this->processPageScript(function (int $pageNumber, int $pageCount) use ($x, $y, $text, $font, $size, $color, $word_space, $char_space, $angle) {
+            $text = str_replace(
+                ["{PAGE_NUM}", "{PAGE_COUNT}"],
+                [$pageNumber, $pageCount],
+                $text
+            );
+            $this->text($x, $y, $text, $font, $size, $color, $word_space, $char_space, $angle);
+        });
     }
 
     public function page_line($x1, $y1, $x2, $y2, $color, $width, $style = [])
     {
-        // Not implemented
+        $this->processPageScript(function () use ($x1, $y1, $x2, $y2, $color, $width, $style) {
+            $this->line($x1, $y1, $x2, $y2, $color, $width, $style);
+        });
     }
 
     /**
@@ -1146,14 +1111,28 @@ class TCPDF implements Canvas
      */
     public function page_script($callback): void
     {
-        $pageNumber = 1;
+        if (is_string($callback)) {
+            $this->processPageScript(function (
+                int $PAGE_NUM,
+                int $PAGE_COUNT,
+                self $pdf,
+                FontMetrics $fontMetrics
+            ) use ($callback) {
+                eval($callback);
+            });
+            return;
+        }
 
+        $this->processPageScript($callback);
+    }
+
+    protected function processPageScript(callable $callback): void
+    {
+        $pageNumber = 1;
         foreach ($this->_pages as $pid) {
             $this->_pdf->setPage($pid);
-
             $fontMetrics = $this->_dompdf->getFontMetrics();
             $callback($pageNumber, $this->get_page_count(), $this, $fontMetrics);
-
             $pageNumber++;
         }
     }
