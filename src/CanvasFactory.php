@@ -24,9 +24,9 @@ class CanvasFactory
     }
 
     /**
-     * @param Dompdf $dompdf
+     * @param Dompdf         $dompdf
      * @param string|float[] $paper
-     * @param string $orientation
+     * @param string         $orientation
      * @param string|null    $class
      *
      * @return Canvas

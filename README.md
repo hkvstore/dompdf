@@ -151,6 +151,12 @@ git checkout 8.1.0
 Require dompdf and it's dependencies in your PHP.
 For details see the [autoloader in the utils project](https://github.com/dompdf/utils/blob/master/autoload.inc.php).
 
+## Framework Integration
+
+* For Symfony: [nucleos/dompdf-bundle](https://github.com/nucleos/NucleosDompdfBundle)
+* For Laravel: [barryvdh/laravel-dompdf](https://github.com/barryvdh/laravel-dompdf)
+* For Redaxo: [PdfOut](https://github.com/FriendsOfREDAXO/pdfout)
+
 ## Quick Start
 
 Just pass your HTML in to dompdf and stream the output:
