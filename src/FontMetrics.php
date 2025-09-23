@@ -129,7 +129,7 @@ class FontMetrics
         if (is_readable($legacyCacheFile)) {
             $fontDir = $this->options->getFontDir();
             $rootDir = $this->options->getRootDir();
-
+    
             $cacheDataClosure = require $legacyCacheFile;
             $cacheData = is_array($cacheDataClosure) ? $cacheDataClosure : $cacheDataClosure($fontDir, $rootDir);
             if (is_array($cacheData)) {
@@ -459,14 +459,10 @@ class FontMetrics
      */
     public function getFont($familyRaw, $subtypeRaw = "normal")
     {
-        if ($this->canvas instanceof \Dompdf\Adapter\TCPDF) { // TCPDF //***
-            return $this->canvas->get_font($familyRaw, $subtypeRaw);
-        }
-
         static $cache = [];
 
         if (!$familyRaw) {
-            $familyRaw = $this->options->getDefaultFont();
+            $familyRaw = $familyRaw === null ? 0 : $this->options->getDefaultFont();
         }
         if (!$subtypeRaw) {
             $subtypeRaw = "normal";
@@ -502,19 +498,19 @@ class FontMetrics
             if (isset($families[$family][$subtype])) {
                 return $cache[$familyRaw][$subtypeRaw] = $families[$family][$subtype];
             }
-
+    
             if (!isset($families[$family])) {
                 continue;
             }
-
+    
             $family = $families[$family];
-
+    
             foreach ($family as $sub => $font) {
                 if (strpos($subtype, $sub) !== false) {
                     return $cache[$familyRaw][$subtypeRaw] = $font;
                 }
             }
-
+    
             if ($subtype !== "normal") {
                 foreach ($family as $sub => $font) {
                     if ($sub !== "normal") {
@@ -522,14 +518,14 @@ class FontMetrics
                     }
                 }
             }
-
+    
             $subtype = "normal";
-
+    
             if (isset($family[$subtype])) {
                 return $cache[$familyRaw][$subtypeRaw] = $family[$subtype];
             }
         }
-
+        
         return null;
     }
 
