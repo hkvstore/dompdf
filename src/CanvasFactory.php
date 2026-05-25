@@ -45,14 +45,14 @@ class CanvasFactory
             }
 
             else {
-                if (class_exists($backend, false)) {
-                    $class = $backend;
-                } elseif ($backend === "gd" && extension_loaded('gd')) {
+                if ($backend === "gd" && extension_loaded('gd')) {
                     $class = "Dompdf\\Adapter\\GD";
                 } elseif ($backend === "cpdf") { //***
                     $class = "Dompdf\\Adapter\\CPDF";
                 } elseif ($backend === "tcpdf") { //***
                     $class = "Dompdf\\Adapter\\TCPDF";
+                } elseif (class_exists($backend, false)) { //***
+                    $class = $backend;
                 }
             }
         }
