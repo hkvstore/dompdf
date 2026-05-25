@@ -530,12 +530,22 @@ class TCPDF implements Canvas
      */
     public function get_font($fontname, $subtype = "", $size = null)
     {
-        $fontname = strtolower($fontname);
+        // Strip out the directory paths injected by dompdf (e.g., "path/to/dompdf/lib/fonts/freeserif" -> "freeserif")
+        $fontname = basename($fontname);
+
+        // Remove file extensions if dompdf appended them (like .ttf, .php, or .ufm)
+        $fontname = preg_replace('/\.(ttf|php|ufm)$/i', '', $fontname);
+
+        // Normalize standard dompdf fallbacks to match TCPDF's core filenames
+        $fontname = str_replace('-roman', '', strtolower($fontname));
+
+        // Handle subtypes
         $subtype = strtolower($subtype);
         if (preg_match('/([bi]+)$/', $fontname, $m)) {
             $fontname = preg_replace('/([bi]+)$/', "", $fontname);
             $subtype = $m[1];
         }
+
         switch ($subtype) {
             case "bold":
             case "b":
@@ -553,7 +563,10 @@ class TCPDF implements Canvas
             default:
                 $subtype = "";
         }
+
+        // Pass the cleaned fontname to TCPDF so that TCPDF will fall back to K_PATH_FONTS
         $this->_pdf->setFont($fontname, $subtype, $size);
+
         return $this->_pdf->getFontFamily() . $this->_pdf->getFontStyle();
     }
 
